@@ -468,18 +468,26 @@ function executarCalculoOrcamento() {
             const sinal = document.getElementById('res-sinal').innerText;
             const entrega = document.getElementById('res-entrega').innerText;
 
-            const mensagem = `Olá Prime Fios, gostaria de formalizar uma solicitação de pré-orçamento:\n\n` +
-                             `*Especificações do Lote:*\n` +
-                             `• Produto: ${nomeProd}\n` +
-                             `• Volume Solicitado: ${qtd} kg\n` +
-                             `• Tonalidade: ${nomeCor}\n` +
-                             `• Preço de Malha por Kg: ${precoKg}\n\n` +
-                             `*Estrutura Financeira Estimada:*\n` +
-                             `• Valor Bruto Total: ${total}\n` +
-                             `• Entrada/Sinal (Fio): ${sinal}\n` +
-                             `• Liquidação (Entrega do Lote): ${entrega}\n\n` +
-                             `_Prazo estimado sujeito à engenharia de produção (25 a 45 dias). Quebra industrial regulamentar de 6% a 8%._`;
+            const mensagem = `SOLICITAÇÃO DE ORÇAMENTO TÊXTIL\n\n` +
+--------------------------------------------------
+`Produto: ${nomeProd}\n` +
+`Quantidade: ${qtd} kg\n` +
+`Cor Escolhida: ${nomeCor}\n` +
 
+`VALORES DO ORÇAMENTO: \n\n` +
+`* *Preço por kg*: ${precoKg}\n` +
+`* VALOR TOTAL: ${total}\n` +
+
+`CONDIÇÕES DE PAGAMENTO: \n\n` +
+`* Passo 1 (Sinal): ${sinal}\n` +
+`  (Inicialmente somente a matéria-prima - Fio) \n` +
+`* Passo 2 (Entrega): ${entrega}\n` +
+`  (Após terminar toda a produção da malha) \n\n` +
+
+`--------------------------------------------------
+`*Atenção: Prazo médio de fabricação de 25 a 45 dias.* \n` +
+`*Sujeito a variação de quebra (percas) de 6% a 8%*
+                             
             if (canal === 'whatsapp') {
                 if (!dbContatos.whatsapp) {
                     alert('Erro: Destinatário do WhatsApp não configurado no Painel Admin.');
