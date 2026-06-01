@@ -1,602 +1,2655 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prime Fios - Portal Têxtil & Orçamentos</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prime Fios — Portal Têxtil & Orçamentos</title>
+
+    <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Google Fonts: Barlow Condensed (display) + Barlow (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Firebase SDKs (v8 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- ============================================================
+         TAILWIND CONFIG
+    ============================================================ -->
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#1e3a8a', // Azul escuro corporativo
-                        secondary: '#0284c7', // Azul de destaque
-                        accent: '#f59e0b', // Laranja para alertas
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        darkMode: "class", // Item 7: Enable class-based dark mode
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1e3a8a",
+              secondary: "#0284c7",
+              accent: "#f59e0b",
+            },
+            fontFamily: {
+              display: ['"Barlow Condensed"', "sans-serif"],
+              body: ["Barlow", "sans-serif"],
+            },
+          },
+        },
+      };
     </script>
+
+    <!-- ============================================================
+         ESTILOS GLOBAIS
+    ============================================================ -->
     <style>
-        .page-section { transition: opacity 0.2s ease-in-out; }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Barlow", sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5 {
+        font-family: "Barlow Condensed", sans-serif;
+      }
+
+      .pf-section {
+        display: none;
+      }
+      .pf-section.is-active {
+        display: block;
+      }
+
+      @keyframes pageFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .pf-section.is-active {
+        animation: pageFadeIn 0.25s ease-out forwards;
+      }
+
+      .pf-section.is-active.grid-layout {
+        display: grid;
+      }
+
+      @keyframes toastIn {
+        from {
+          transform: translateX(110%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes toastOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+          transform: translateX(110%);
+        }
+      }
+      .toast-in {
+        animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+      .toast-out {
+        animation: toastOut 0.25s ease-in forwards;
+      }
+
+      .pf-spinner {
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 0.7s linear infinite;
+      }
+      .pf-spinner.dark {
+        border-color: rgba(30, 58, 138, 0.15);
+        border-top-color: #1e3a8a;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: -600px 0;
+        }
+        100% {
+          background-position: 600px 0;
+        }
+      }
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          #f0f4f8 25%,
+          #e2e8f0 50%,
+          #f0f4f8 75%
+        );
+        background-size: 600px 100%;
+        animation: shimmer 1.4s infinite linear;
+        border-radius: 6px;
+      }
+
+      .nav-item {
+        position: relative;
+        padding-bottom: 3px;
+      }
+      .nav-item::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        height: 2px;
+        background: #1e3a8a;
+        transition: width 0.25s ease;
+      }
+      .nav-item.active {
+        color: #1e3a8a;
+        font-weight: 700;
+      }
+      .nav-item.active::after {
+        width: 100%;
+      }
+
+      #mobile-drawer {
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      #mobile-drawer.open {
+        transform: translateX(0);
+      }
+      #drawer-backdrop {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      #drawer-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .pf-modal {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      .pf-modal.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .pf-modal .modal-card {
+        transform: scale(0.95) translateY(-8px);
+        transition:
+          transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1),
+          opacity 0.25s ease;
+        opacity: 0;
+      }
+      .pf-modal.open .modal-card {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+
+      .pf-input {
+        width: 100%;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-family: "Barlow", sans-serif;
+        font-size: 0.9rem;
+        font-weight: 500;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s,
+          background 0.2s;
+      }
+      .pf-input:focus {
+        border-color: #1e3a8a;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+      }
+      .pf-input.error {
+        border-color: #ef4444;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      }
+      .pf-input.success {
+        border-color: #10b981;
+      }
+
+      .pf-card-hover {
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .pf-card-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(30, 58, 138, 0.1);
+      }
+
+      .result-value {
+        transition: all 0.2s ease;
+      }
+
+      .hero-diagonal::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: #f8fafc;
+        clip-path: polygon(0 100%, 100% 0, 100% 100%);
+      }
+
+      .adm-tr:hover td {
+        background: #f8fafc;
+      }
+
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      .field-error {
+        color: #ef4444;
+        font-size: 0.72rem;
+        font-weight: 600;
+        margin-top: 4px;
+        display: none;
+      }
+      .field-error.show {
+        display: block;
+      }
+
+      /* ── Item 4: Banner de erro de conexão ── */
+      #banner-db-error {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: #dc2626;
+        color: #fff;
+        text-align: center;
+        padding: 10px 16px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        font-family: "Barlow", sans-serif;
+        letter-spacing: 0.01em;
+        box-shadow: 0 2px 12px rgba(220, 38, 38, 0.3);
+      }
+      #banner-db-error.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      /* ── Item 7: Select de status coloridos ── */
+      .status-select {
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 6px;
+        border: 1.5px solid;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s;
+      }
+      .status-pending {
+        background: #fff7ed;
+        border-color: #fb923c;
+        color: #c2410c;
+      }
+      .status-progress {
+        background: #eff6ff;
+        border-color: #60a5fa;
+        color: #1d4ed8;
+      }
+      .status-done {
+        background: #f0fdf4;
+        border-color: #4ade80;
+        color: #15803d;
+      }
+
+      /* ── Item 7: Extra CSS para Dark Mode ── */
+      .dark body,
+      .dark .bg-slate-50 {
+        background-color: #111827;
+        color: #f9fafb;
+      }
+      .dark .bg-white {
+        background-color: #1f2937;
+        border-color: #374151;
+      }
+      .dark .text-gray-900 {
+        color: #f9fafb;
+      }
+      .dark .text-gray-800 {
+        color: #f3f4f6;
+      }
+      .dark .text-gray-700 {
+        color: #e5e7eb;
+      }
+      .dark .text-gray-600 {
+        color: #d1d5db;
+      }
+      .dark .text-gray-500 {
+        color: #9ca3af;
+      }
+      .dark .border-gray-100,
+      .dark .border-gray-200 {
+        border-color: #374151;
+      }
+      .dark .pf-input {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+      }
+      .dark .pf-input:focus {
+        border-color: #3b82f6;
+        background: #1f2937;
+      }
+      .dark .bg-gray-50,
+      .dark .bg-gray-100 {
+        background-color: #374151;
+        color: #e5e7eb;
+      }
+      .dark .bg-blue-50 {
+        background-color: rgba(30, 58, 138, 0.3);
+      }
+      .dark .text-blue-800 {
+        color: #93c5fd;
+      }
+      .dark .border-blue-200 {
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+      .dark header {
+        background-color: rgba(31, 41, 55, 0.95);
+        border-bottom-color: #374151;
+      }
+      .dark .modal-card {
+        background-color: #1f2937;
+        color: #f9fafb;
+        border: 1px solid #374151;
+      }
+      .dark .adm-tr:hover td {
+        background: #374151;
+      }
+      .dark .hero-diagonal::after {
+        background: #111827;
+      }
     </style>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-</head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  </head>
 
-    <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchPage('home')">
-                <div class="bg-primary text-white p-2.5 rounded-xl shadow-lg">
-                    <i class="fa-solid fa-scissors text-xl"></i>
-                </div>
-                <div>
-                    <span class="text-xl font-extrabold text-primary tracking-tight">PRIME FIOS</span>
-                    <span class="block text-xs text-gray-400 font-medium tracking-widest uppercase">Assessoria Têxtil</span>
-                </div>
+  <body
+    class="bg-slate-50 text-gray-800 min-h-screen flex flex-col overflow-x-hidden"
+  >
+    <div id="banner-db-error" role="alert">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span
+        >Falha na conexão com o banco de dados. Os valores exibidos podem estar
+        zerados. Verifique sua internet e recarregue a página.</span
+      >
+    </div>
+
+    <div
+      id="toast-container"
+      class="fixed top-20 right-3 z-[200] flex flex-col gap-2 pointer-events-none"
+    ></div>
+
+    <div
+      id="drawer-backdrop"
+      class="fixed inset-0 bg-black/50 z-[80] md:hidden backdrop-blur-sm"
+      aria-hidden="true"
+    ></div>
+
+    <aside
+      id="mobile-drawer"
+      class="fixed top-0 left-0 h-full w-72 bg-white z-[90] shadow-2xl md:hidden flex flex-col"
+      role="navigation"
+    >
+      <div
+        class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow"
+          >
+            <i class="fa-solid fa-scissors text-white text-sm"></i>
+          </div>
+          <div>
+            <div
+              class="font-display text-base font-black text-primary leading-none tracking-tight"
+            >
+              PRIME FIOS
             </div>
-
-            <nav class="hidden md:flex items-center space-x-8 font-semibold text-gray-600">
-                <button onclick="switchPage('home')" id="nav-home" class="hover:text-primary transition-colors text-primary border-b-2 border-primary pb-1">Quem Somos</button>
-                <button onclick="switchPage('orcamento')" id="nav-orcamento" class="hover:text-primary transition-colors pb-1">Pré-Orçamento</button>
-                <button onclick="switchPage('contato')" id="nav-contato" class="hover:text-primary transition-colors pb-1">Contato</button>
-            </nav>
-
-            <div class="flex items-center space-x-4">
-                <button onclick="switchPage('admin')" id="nav-admin" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center space-x-2">
-                    <i class="fa-solid fa-lock text-xs"></i>
-                    <span>Painel Admin</span>
-                </button>
+            <div
+              class="text-[10px] text-gray-400 font-semibold tracking-widest uppercase mt-0.5"
+            >
+              Assessoria Têxtil
             </div>
+          </div>
         </div>
+        <button
+          id="btn-close-drawer"
+          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+        >
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <nav class="flex flex-col gap-1 p-4 flex-1">
+        <button
+          data-page="home"
+          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all text-left"
+        >
+          <i class="fa-solid fa-house w-4 text-secondary"></i>
+          Quem Somos
+        </button>
+        <button
+          data-page="orcamento"
+          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all text-left"
+        >
+          <i class="fa-solid fa-calculator w-4 text-secondary"></i>
+          Pré-Orçamento
+        </button>
+        <button
+          data-page="contato"
+          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all text-left"
+        >
+          <i class="fa-solid fa-envelope w-4 text-secondary"></i>
+          Contato
+        </button>
+        <div class="border-t border-gray-100 my-2"></div>
+        <button
+          data-page="admin"
+          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-blue-900 transition-all shadow-md text-left"
+        >
+          <i class="fa-solid fa-lock w-4"></i>
+          Painel Admin
+        </button>
+      </nav>
+    </aside>
+
+    <!-- ─────────────────────────────────────────────
+     HEADER / NAVBAR
+───────────────────────────────────────────── -->
+    <header
+      class="bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm sticky top-0 z-30"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between gap-4"
+      >
+        <button
+          id="logo-btn"
+          class="flex items-center gap-3 group"
+          aria-label="Ir para início"
+        >
+          <div
+            class="w-10 h-10 bg-primary group-hover:bg-blue-900 text-white rounded-xl flex items-center justify-center shadow-lg transition-colors"
+          >
+            <i class="fa-solid fa-scissors text-base"></i>
+          </div>
+          <div>
+            <span
+              class="block font-display text-xl font-black text-primary tracking-tight leading-none"
+              >PRIME FIOS</span
+            >
+            <span
+              class="block text-[10px] text-gray-400 font-semibold tracking-widest uppercase mt-0.5"
+              >Assessoria Têxtil</span
+            >
+          </div>
+        </button>
+
+        <nav
+          class="hidden md:flex items-center gap-7 font-semibold text-gray-500 text-sm"
+          aria-label="Navegação principal"
+        >
+          <button
+            data-page="home"
+            class="nav-item desktop-nav-btn transition-colors hover:text-primary"
+          >
+            Quem Somos
+          </button>
+          <button
+            data-page="orcamento"
+            class="nav-item desktop-nav-btn transition-colors hover:text-primary"
+          >
+            Pré-Orçamento
+          </button>
+          <button
+            data-page="contato"
+            class="nav-item desktop-nav-btn transition-colors hover:text-primary"
+          >
+            Contato
+          </button>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <!-- ★ ITEM 7: Dark Mode Toggle ★ -->
+          <button
+            id="btn-toggle-dark"
+            class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
+            title="Alternar Modo Escuro"
+          >
+            <i class="fa-solid fa-moon"></i>
+          </button>
+
+          <button
+            data-page="admin"
+            id="desktop-admin-btn"
+            class="hidden md:flex items-center gap-2 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+          >
+            <i class="fa-solid fa-lock text-[11px]"></i>
+            <span>Painel Admin</span>
+          </button>
+
+          <button
+            id="btn-open-drawer"
+            class="md:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-600 transition-colors"
+            aria-label="Abrir menu"
+            aria-expanded="false"
+          >
+            <i class="fa-solid fa-bars text-lg"></i>
+          </button>
+        </div>
+      </div>
     </header>
 
+    <!-- ─────────────────────────────────────────────
+     MAIN CONTENT
+───────────────────────────────────────────── -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <!-- ══════════════════════════════════════════
+         PÁGINA 1 — HOME / QUEM SOMOS
+    ══════════════════════════════════════════ -->
+      <section id="page-home" class="pf-section is-active space-y-14">
+        <div
+          class="relative overflow-hidden bg-primary rounded-3xl text-white px-8 py-16 md:py-20 hero-diagonal"
+        >
+          <div
+            class="absolute inset-0 opacity-10"
+            style="
+              background-image:
+                repeating-linear-gradient(
+                  0deg,
+                  transparent,
+                  transparent 29px,
+                  rgba(255, 255, 255, 0.3) 29px,
+                  rgba(255, 255, 255, 0.3) 30px
+                ),
+                repeating-linear-gradient(
+                  90deg,
+                  transparent,
+                  transparent 29px,
+                  rgba(255, 255, 255, 0.3) 29px,
+                  rgba(255, 255, 255, 0.3) 30px
+                );
+            "
+          ></div>
 
-        <section id="page-home" class="page-section space-y-12">
-            <div class="text-center max-w-3xl mx-auto space-y-4">
-                <h1 class="text-4xl font-black text-primary md:text-5xl leading-tight">Excelência em Fornecimento e Industrialização Têxtil</h1>
-                <p class="text-gray-600 text-lg">A Prime Fios une tecnologia de ponta, matérias-primas rigorosamente selecionadas e engenharia de precisão para entregar as melhores malhas e fios do mercado nacional.</p>
+          <div
+            class="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-secondary/30 blur-2xl"
+          ></div>
+          <div
+            class="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-accent/20 blur-2xl"
+          ></div>
+
+          <div class="relative z-10 max-w-3xl mx-auto text-center space-y-5">
+            <span
+              class="inline-block bg-white/10 border border-white/20 text-blue-100 text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full"
+            >
+              Engenharia Têxtil Integrada
+            </span>
+            <h1
+              class="font-display text-4xl md:text-6xl font-black leading-tight"
+            >
+              Excelência em Fornecimento<br class="hidden md:block" />
+              e Industrialização Têxtil
+            </h1>
+            <p
+              class="text-blue-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed"
+            >
+              A Prime Fios une tecnologia de ponta, matérias-primas
+              rigorosamente selecionadas e engenharia de precisão para entregar
+              as melhores malhas e fios do mercado nacional.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <button
+                data-page="orcamento"
+                class="inline-flex items-center justify-center gap-2 bg-accent hover:bg-amber-400 text-white font-bold px-7 py-3 rounded-xl shadow-lg transition-all text-sm"
+              >
+                <i class="fa-solid fa-calculator"></i> Simular Orçamento
+              </button>
+              <button
+                data-page="contato"
+                class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-7 py-3 rounded-xl transition-all text-sm"
+              >
+                <i class="fa-solid fa-envelope"></i> Falar Conosco
+              </button>
             </div>
-            
-            <div class="grid md:grid-cols-3 gap-8 pt-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-                    <div class="text-secondary text-3xl"><i class="fa-solid fa-layer-group"></i></div>
-                    <h3 class="text-xl font-bold text-gray-900">Capacidade de Producão</h3>
-                    <p class="text-gray-600 text-sm">Estrutura industrial dimensionada para atender grandes volumes em tecelagem e acabamentos têxteis com prazos otimizados.</p>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-                    <div class="text-secondary text-3xl"><i class="fa-solid fa-droplet"></i></div>
-                    <h3 class="text-xl font-bold text-gray-900">Tinturaria de Alta Performance</h3>
-                    <p class="text-gray-600 text-sm">Fidelidade absoluta de cores com laboratórios automatizados e insumos com certificações de sustentabilidade.</p>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-                    <div class="text-secondary text-3xl"><i class="fa-solid fa-shield-halved"></i></div>
-                    <h3 class="text-xl font-bold text-gray-900">Garantia e Rastreabilidade</h3>
-                    <p class="text-gray-600 text-sm">Monitoramento laboratorial desde a entrada do fio cru até a expedição final do rolo de malha acabado.</p>
-                </div>
-            </div>
-        </section>
+          </div>
+        </div>
 
-        <section id="page-orcamento" class="page-section hidden grid lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
-                <div>
-                    <h2 class="text-2xl font-black text-primary">Simulador de Orçamento Têxtil</h2>
-                    <p class="text-gray-500 text-sm">Configure o seu lote de malha para obter projeções comerciais automáticas.</p>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-700">1. Selecione o Produto / Artigo</label>
-                        <select id="produto" onchange="executarCalculoOrcamento()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:bg-white outline-none font-medium transition-all">
-                            </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-700">2. Escolha a Variante de Cor</label>
-                        <select id="cor" onchange="executarCalculoOrcamento()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:bg-white outline-none font-medium transition-all">
-                            </select>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-sm font-bold text-gray-700">3. Volume do Pedido</label>
-                    <select id="quantidade" onchange="executarCalculoOrcamento()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:bg-white outline-none font-bold text-lg transition-all">
-                        <option value="300">300 KG</option>
-                        <option value="500">500 KG</option>
-                        <option value="1000" selected>1.000 KG</option>
-                        <option value="2000">2.000 KG</option>
-                        <option value="5000">5.000 KG</option>
-                        <option value="10000">10.000 KG</option>
-                    </select>
-                    <p class="text-xs text-amber-800 font-semibold bg-amber-50 p-3 rounded-xl border border-amber-200 mt-2 flex items-center space-x-2">
-                        <i class="fa-solid fa-circle-info text-amber-500 text-sm"></i>
-                        <span>Atenção: Este peso representa apenas a única cor escolhida.</span>
-                    </p>
-                </div>
-            </div>
-
-            <div class="bg-primary text-white p-8 rounded-3xl shadow-xl flex flex-col justify-between space-y-8">
-                <div class="space-y-6">
-                    <h3 class="text-xl font-extrabold tracking-tight border-b border-blue-900 pb-3">Resumo da Projeção Financeira</h3>
-                    
-                    <div>
-                        <span class="text-xs text-blue-200 block uppercase font-bold tracking-widest">Valor do Quilo (Kg) Acabado</span>
-                        <div id="res-preco-kg" class="text-3xl font-black text-white">R$ 0,00</div>
-                    </div>
-
-                    <div class="border-t border-blue-900 pt-4">
-                        <span class="text-xs text-blue-200 block uppercase font-bold tracking-widest">Valor Bruto do Lote</span>
-                        <div id="res-valor-total" class="text-4xl font-black text-amber-400 tracking-tight">R$ 0,00</div>
-                    </div>
-
-                 <div class="border-t border-blue-900 pt-4 mt-6">
-    
-    <div class="grid grid-cols-2 gap-4 mb-6">
         <div>
-            <span class="text-xs text-blue-200 block font-bold uppercase tracking-wide">Sinal (Custo do Fio)</span>
-            <div id="res-sinal" class="text-lg font-bold text-yellow-300">R$ 0,00</div>
+          <h2
+            class="font-display text-3xl font-black text-primary mb-8 text-center"
+          >
+            Por Que Escolher a Prime Fios?
+          </h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div
+              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
+            >
+              <div
+                class="w-11 h-11 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl"
+              >
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <h3 class="font-display text-xl font-bold text-gray-900">
+                Capacidade de Produção
+              </h3>
+              <p class="text-gray-500 text-sm leading-relaxed">
+                Estrutura industrial dimensionada para atender grandes volumes
+                em tecelagem e acabamentos com prazos otimizados.
+              </p>
+            </div>
+            <div
+              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
+            >
+              <div
+                class="w-11 h-11 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl"
+              >
+                <i class="fa-solid fa-droplet"></i>
+              </div>
+              <h3 class="font-display text-xl font-bold text-gray-900">
+                Tinturaria de Alta Performance
+              </h3>
+              <p class="text-gray-500 text-sm leading-relaxed">
+                Fidelidade absoluta de cores com laboratórios automatizados e
+                insumos com certificações de sustentabilidade.
+              </p>
+            </div>
+            <div
+              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
+            >
+              <div
+                class="w-11 h-11 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl"
+              >
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <h3 class="font-display text-xl font-bold text-gray-900">
+                Garantia e Rastreabilidade
+              </h3>
+              <p class="text-gray-500 text-sm leading-relaxed">
+                Monitoramento laboratorial desde o fio cru até a expedição final
+                do rolo de malha acabado.
+              </p>
+            </div>
+            <div
+              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
+            >
+              <div
+                class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center text-xl"
+              >
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <h3 class="font-display text-xl font-bold text-gray-900">
+                Prazo de Fabricação
+              </h3>
+              <p class="text-gray-500 text-sm leading-relaxed">
+                Média de <strong>25 a 45 dias</strong> conforme produto e
+                quantidade. Agendamento preciso desde o pedido.
+              </p>
+            </div>
+            <div
+              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
+            >
+              <div
+                class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center text-xl"
+              >
+                <i class="fa-solid fa-chart-pie"></i>
+              </div>
+              <h3 class="font-display text-xl font-bold text-gray-900">
+                Quebra (Perca)
+              </h3>
+              <p class="text-gray-500 text-sm leading-relaxed">
+                Perdas industriais de <strong>6% a 8%</strong>, dentro do padrão
+                técnico setorial. Totalmente informadas ao cliente.
+              </p>
+            </div>
+            <div
+              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
+            >
+              <div
+                class="w-11 h-11 bg-primary/10 text-primary rounded-xl flex items-center justify-center text-xl"
+              >
+                <i class="fa-solid fa-handshake"></i>
+              </div>
+              <h3 class="font-display text-xl font-bold text-gray-900">
+                Atendimento Consultivo
+              </h3>
+              <p class="text-gray-500 text-sm leading-relaxed">
+                Nossa equipe técnica orienta em cada etapa, da especificação do
+                fio à escolha do acabamento ideal.
+              </p>
+            </div>
+          </div>
         </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════
+         PÁGINA 2 — PRÉ-ORÇAMENTO (SIMULADOR)
+    ══════════════════════════════════════════ -->
+      <section
+        id="page-orcamento"
+        class="pf-section grid-layout lg:grid-cols-3 gap-8"
+      >
+        <div
+          class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
+        >
+          <div
+            class="bg-gradient-to-r from-primary to-secondary px-7 py-5 text-white"
+          >
+            <h2 class="font-display text-2xl font-black tracking-tight">
+              Simulador de Orçamento Têxtil
+            </h2>
+            <p class="text-blue-200 text-sm mt-0.5">
+              Configure o lote para obter projeções comerciais automáticas.
+            </p>
+          </div>
+
+          <!-- Loading skeleton -->
+          <div id="skeleton-orcamento" class="p-7 space-y-5">
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="space-y-2">
+                <div class="skeleton h-4 w-32 mb-2"></div>
+                <div class="skeleton h-11 w-full"></div>
+              </div>
+              <div class="space-y-2">
+                <div class="skeleton h-4 w-28 mb-2"></div>
+                <div class="skeleton h-11 w-full"></div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="skeleton h-4 w-36 mb-2"></div>
+              <div class="skeleton h-11 w-full"></div>
+            </div>
+          </div>
+
+          <!-- Actual form -->
+          <div id="form-orcamento" class="p-7 space-y-5 hidden">
+            <!-- Dados do Cliente -->
+            <div
+              class="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3"
+            >
+              <p
+                class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2"
+              >
+                <i class="fa-solid fa-user text-blue-500"></i> Seus Dados (para
+                contato)
+              </p>
+              <div class="grid md:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                  <label
+                    for="input-cliente-nome"
+                    class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
+                    >Seu Nome</label
+                  >
+                  <input
+                    type="text"
+                    id="input-cliente-nome"
+                    class="pf-input"
+                    placeholder="Ex: João da Silva"
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label
+                    for="input-cliente-whats"
+                    class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
+                    >Seu WhatsApp</label
+                  >
+                  <input
+                    type="text"
+                    id="input-cliente-whats"
+                    class="pf-input whats-mask"
+                    placeholder="Ex: (47) 99999-9999"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-5">
+              <!-- Produto -->
+              <div class="space-y-1.5">
+                <label
+                  for="sel-produto"
+                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
+                  >1. Produto / Artigo</label
+                >
+                <select
+                  id="sel-produto"
+                  class="pf-input cursor-pointer font-semibold"
+                ></select>
+              </div>
+
+              <!-- Cor -->
+              <div class="space-y-1.5">
+                <label
+                  for="sel-cor"
+                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
+                  >2. Variante de Cor</label
+                >
+                <select
+                  id="sel-cor"
+                  class="pf-input cursor-pointer font-semibold"
+                ></select>
+              </div>
+            </div>
+
+            <!-- Quantidade -->
+            <div class="space-y-1.5">
+              <label
+                for="sel-quantidade"
+                class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
+                >3. Volume do Pedido (kg)</label
+              >
+              <select
+                id="sel-quantidade"
+                class="pf-input cursor-pointer font-bold text-base"
+              >
+                <option value="300">300 KG</option>
+                <option value="500">500 KG</option>
+                <option value="1000" selected>1.000 KG</option>
+                <option value="2000">2.000 KG</option>
+                <option value="5000">5.000 KG</option>
+              </select>
+            </div>
+
+            <!-- Observações -->
+            <div class="space-y-1.5">
+              <label
+                for="obs-pedido"
+                class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
+              >
+                4. Observações
+                <span class="text-gray-400 font-normal normal-case"
+                  >(opcional)</span
+                >
+              </label>
+              <textarea
+                id="obs-pedido"
+                rows="2"
+                class="pf-input resize-none"
+              ></textarea>
+            </div>
+
+            <div
+              class="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2.5"
+            >
+              <div class="flex items-start gap-2.5">
+                <i
+                  class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5 flex-shrink-0"
+                ></i>
+                <div class="space-y-1.5">
+                  <p
+                    class="text-xs font-bold text-red-800 uppercase tracking-wide"
+                  >
+                    Avisos Técnicos
+                  </p>
+                  <p class="text-xs text-red-700 font-medium">
+                    • Prazo médio: <strong>25 a 45 dias</strong>
+                  </p>
+                  <p class="text-xs text-red-700 font-medium">
+                    • Quebra (perdas): <strong>6% a 8%</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-    <div class="w-full p-4 bg-red-50 border-l-4 border-red-500 rounded-lg shadow-sm">
-        <ul class="text-red-800 font-bold text-sm uppercase space-y-2">
-            <li class="flex items-start">
-                <span class="mr-2">●</span>
-                <span>PRAZO MÉDIO DE FABRICAÇÃO: 25 A 45 DIAS</span>
-            </li>
-            <li class="flex items-start">
-                <span class="mr-2">●</span>
-                <span>ATENÇÃO!! QUEBRA (PERCAS) 6% A 8%</span>
-            </li>
-        </ul>
-    </div>
-</div>
-                        <div>
-                            <span class="text-xs text-blue-200 block font-bold uppercase tracking-wide">Liquidação (Entrega)</span>
-                            <div id="res-entrega" class="text-lg font-bold text-green-400">R$ 0,00</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-3 pt-4">
-                    <button onclick="enviarOrcamento('whatsapp')" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all">
-                        <i class="fa-brands fa-whatsapp text-lg"></i>
-                        <span>Formalizar por WhatsApp</span>
-                    </button>
-                    <button onclick="enviarOrcamento('email')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all border border-blue-500">
-                        <i class="fa-solid fa-envelope text-lg"></i>
-                        <span>Formalizar por E-mail</span>
-                    </button>
-                </div>
+        <!-- Results panel -->
+        <div
+          id="painel-resultados"
+          class="bg-primary text-white rounded-3xl shadow-xl relative overflow-hidden flex flex-col transition-all duration-300"
+        >
+          <div
+            class="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -mr-10 -mt-10"
+          ></div>
+          <div class="relative z-10 p-7 flex flex-col h-full gap-6">
+            <h3
+              class="font-display text-xl font-black tracking-tight border-b border-white/10 pb-4"
+            >
+              Projeção Financeira
+            </h3>
+            <div>
+              <span
+                class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
+                >Valor do Kg Acabado</span
+              >
+              <div
+                id="res-preco-kg"
+                class="result-value font-display text-3xl font-black text-white"
+              >
+                R$ 0,00
+              </div>
             </div>
-        </section>
-
-        <section id="page-contato" class="page-section hidden max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <div class="text-center max-w-xl mx-auto space-y-3 mb-10">
-                <h2 class="text-3xl font-black text-primary">Canais de Atendimento Oficial</h2>
-                <p class="text-gray-500">Entre em contato direto com o nosso departamento comercial corporativo.</p>
+            <div class="bg-white/10 rounded-2xl p-4">
+              <span
+                class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
+                >Valor Bruto do Lote</span
+              >
+              <div
+                id="res-valor-total"
+                class="result-value font-display text-4xl font-black text-accent"
+              >
+                R$ 0,00
+              </div>
             </div>
-
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="space-y-6">
-                    <div class="flex items-start space-x-4">
-                        <div class="bg-blue-50 text-primary p-3.5 rounded-xl"><i class="fa-solid fa-phone text-lg"></i></div>
-                        <div>
-                            <h4 class="font-bold text-gray-900">Telefones de Contato</h4>
-                            <p id="contato-txt-whats" class="text-gray-600 text-sm font-semibold mt-1">Carregando...</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-4">
-                        <div class="bg-blue-50 text-primary p-3.5 rounded-xl"><i class="fa-solid fa-envelope text-lg"></i></div>
-                        <div>
-                            <h4 class="font-bold text-gray-900">E-mail Corporativo</h4>
-                            <p id="contato-txt-email" class="text-gray-600 text-sm font-semibold mt-1">Carregando...</p>
-                        </div>
-                    </div>
-                    <div class="flex items-start space-x-4">
-                        <div class="bg-blue-50 text-primary p-3.5 rounded-xl"><i class="fa-solid fa-location-dot text-lg"></i></div>
-                        <div>
-                            <h4 class="font-bold text-gray-900">Parque Industrial</h4>
-                            <p class="text-gray-600 text-sm mt-1">Distrito Industrial - Polo Têxtil, Santa Catarina</p>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white/10 rounded-xl p-3">
+                <span
+                  class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
+                  >Sinal (Fio)</span
+                >
+                <div
+                  id="res-sinal"
+                  class="result-value font-display text-lg font-bold text-yellow-300"
+                >
+                  R$ 0,00
                 </div>
-
-                <form onsubmit="event.preventDefault(); alert('Mensagem enviada com sucesso!');" class="space-y-4">
-                    <input type="text" placeholder="Seu Nome Completo" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all">
-                    <input type="email" placeholder="Seu E-mail Corporativo" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all">
-                    <textarea placeholder="Como podemos ajudar no seu projeto?" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"></textarea>
-                    <button class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md">Enviar Mensagem</button>
-                </form>
+              </div>
+              <div class="bg-white/10 rounded-xl p-3">
+                <span
+                  class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
+                  >Liquidação</span
+                >
+                <div
+                  id="res-entrega"
+                  class="result-value font-display text-lg font-bold text-green-400"
+                >
+                  R$ 0,00
+                </div>
+              </div>
             </div>
-        </section>
+            <div
+              id="res-breakdown"
+              class="text-xs text-blue-200 space-y-1 border-t border-white/10 pt-3 hidden"
+            ></div>
 
-        <section id="page-admin" class="page-section hidden space-y-10">
-            <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-200 pb-4 gap-4">
+            <div class="space-y-2 mt-auto">
+              <button
+                id="btn-whatsapp"
+                class="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md"
+              >
+                <i class="fa-brands fa-whatsapp text-lg"></i> Formalizar por
+                WhatsApp
+              </button>
+              <button
+                id="btn-email"
+                class="w-full bg-white/10 hover:bg-white/20 border border-white/20 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all"
+              >
+                <i class="fa-solid fa-envelope"></i> Formalizar por E-mail
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════
+         PÁGINA 3 — CONTATO
+    ══════════════════════════════════════════ -->
+      <section id="page-contato" class="pf-section max-w-5xl mx-auto">
+        <div class="text-center mb-10 space-y-2">
+          <h2 class="font-display text-4xl font-black text-primary">
+            Canais de Atendimento
+          </h2>
+          <p class="text-gray-500">
+            Fale diretamente com nosso departamento comercial corporativo.
+          </p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div class="space-y-5">
+            <div
+              class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+            >
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-11 h-11 bg-blue-50 text-primary rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                >
+                  <i class="fa-brands fa-whatsapp"></i>
+                </div>
                 <div>
-                    <h2 class="text-2xl font-black text-gray-900">Painel de Configuração Têxtil</h2>
-                    <p class="text-gray-500 text-sm">Controle de tabelas de custos de insumos e dados de leads.</p>
+                  <p
+                    class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1"
+                  >
+                    WhatsApp / Telefone
+                  </p>
+                  <p
+                    id="contato-txt-whats"
+                    class="text-gray-800 font-semibold text-sm"
+                  ></p>
                 </div>
-                <div class="flex space-x-2">
-                    <button onclick="restaurarDadosOriginais()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold transition-all">Restaurar Padrão</button>
+              </div>
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-11 h-11 bg-blue-50 text-primary rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                >
+                  <i class="fa-solid fa-envelope"></i>
                 </div>
+                <div>
+                  <p
+                    class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1"
+                  >
+                    E-mail Corporativo
+                  </p>
+                  <p
+                    id="contato-txt-email"
+                    class="text-gray-800 font-semibold text-sm"
+                  ></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-white rounded-2xl border border-gray-100 shadow-sm p-7"
+          >
+            <h3 class="font-display text-2xl font-bold text-gray-900 mb-5">
+              Envie uma Mensagem
+            </h3>
+            <form id="form-contato" class="space-y-4" novalidate>
+              <div>
+                <label
+                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"
+                  >Nome Completo *</label
+                >
+                <input type="text" id="contato-nome" class="pf-input" />
+              </div>
+              <div>
+                <label
+                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"
+                  >E-mail *</label
+                >
+                <input type="email" id="contato-email" class="pf-input" />
+              </div>
+              <div>
+                <label
+                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"
+                  >Mensagem *</label
+                >
+                <textarea
+                  id="contato-msg"
+                  class="pf-input resize-none"
+                  rows="4"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                id="btn-enviar-contato"
+                class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2 text-sm"
+              >
+                <span id="btn-contato-txt">Enviar Mensagem</span>
+              </button>
+              <div
+                id="contato-success"
+                class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3"
+              >
+                <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                <div>
+                  <p class="text-sm font-bold text-emerald-800">
+                    Mensagem enviada!
+                  </p>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════
+         PÁGINA 4 — PAINEL ADMIN
+    ══════════════════════════════════════════ -->
+      <section id="page-admin" class="pf-section space-y-8">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5"
+        >
+          <div>
+            <h2 class="font-display text-3xl font-black text-gray-900">
+              Painel de Configuração
+            </h2>
+            <p
+              id="param-sync-indic"
+              class="text-gray-500 text-xs mt-1 font-bold"
+            >
+              Última sincronização: --
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              id="btn-logout"
+              class="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+            >
+              <i class="fa-solid fa-right-from-bracket"></i> Sair
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 border-b border-gray-200 pb-0 flex-wrap">
+          <button
+            id="tab-btn-config"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-primary text-primary bg-white"
+            data-tab="config"
+          >
+            Configurações
+          </button>
+          <button
+            id="tab-btn-producao"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50"
+            data-tab="producao"
+          >
+            Controle de Produção
+          </button>
+        </div>
+
+        <!-- ABA CONFIGURAÇÕES -->
+        <div id="admin-tab-config" class="admin-tab-panel space-y-8">
+          <div class="grid lg:grid-cols-3 gap-8">
+            <div class="space-y-6">
+              <div
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
+              >
+                <h3
+                  class="font-display text-base font-bold text-gray-900 border-b border-gray-100 pb-3"
+                >
+                  Contatos
+                </h3>
+                <form id="form-admin-contatos" class="space-y-4">
+                  <input
+                    type="text"
+                    id="adm-whats"
+                    class="pf-input text-sm whats-mask"
+                    placeholder="WhatsApp"
+                  />
+                  <input
+                    type="email"
+                    id="adm-email"
+                    class="pf-input text-sm"
+                    placeholder="E-mail"
+                  />
+                  <button
+                    type="submit"
+                    class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
+                  >
+                    Salvar
+                  </button>
+                </form>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
+              >
+                <h3
+                  class="font-display text-base font-bold text-gray-900 border-b border-gray-100 pb-3"
+                >
+                  Custo Piquet
+                </h3>
+                <form id="form-admin-piquet" class="space-y-4">
+                  <input
+                    type="number"
+                    id="adm-custo-piquet"
+                    class="pf-input text-sm"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                  <button
+                    type="submit"
+                    class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
+                  >
+                    Salvar
+                  </button>
+                </form>
+              </div>
+
+              <!-- ★ ITEM 4: Integração Sheets ★ -->
+              <div
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
+              >
+                <h3
+                  class="font-display text-base font-bold text-gray-900 border-b border-gray-100 pb-3"
+                >
+                  <i class="fa-solid fa-file-excel text-green-600"></i>
+                  Integração Sheets
+                </h3>
+                <form id="form-admin-sheets" class="space-y-4">
+                  <input
+                    type="url"
+                    id="adm-url-sheets"
+                    class="pf-input text-sm"
+                    placeholder="URL Apps Script"
+                  />
+                  <button
+                    type="submit"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
+                  >
+                    Salvar URL Sheets
+                  </button>
+                </form>
+              </div>
             </div>
 
-            <div class="grid lg:grid-cols-3 gap-8">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4 h-fit">
-                    <h3 class="text-md font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center space-x-2">
-                        <i class="fa-solid fa-address-book text-primary"></i>
-                        <span>Destinatários de Leads</span>
-                    </h3>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase">WhatsApp (Apenas Números)</label>
-                            <input type="text" id="adm-whats" onchange="salvarDadosAtendimento()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold mt-1">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase">E-mail de Vendas</label>
-                            <input type="email" id="adm-email" onchange="salvarDadosAtendimento()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold mt-1">
-                        </div>
-                    </div>
+            <div class="lg:col-span-2 space-y-8">
+              <!-- Tabela de Produtos -->
+              <div
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+              >
+                <div
+                  class="flex items-center justify-between px-6 py-4 border-b border-gray-100"
+                >
+                  <h3 class="font-display text-base font-bold text-gray-900">
+                    Produtos
+                  </h3>
+                  <button
+                    id="btn-novo-produto"
+                    class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg"
+                  >
+                    Novo Artigo
+                  </button>
                 </div>
-
-                <div class="lg:col-span-2 space-y-8">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-md font-bold text-gray-900 flex items-center space-x-2">
-                                <i class="fa-solid fa-scroll text-primary"></i>
-                                <span>Tabela de Produtos & Custos</span>
-                            </h3>
-                            <button onclick="abrirModalProduto()" class="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-blue-950 transition-all">+ Novo Artigo</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-100">
-                                        <th class="p-3">Artigo/Descrição</th>
-                                        <th class="p-3">Fio (R$)</th>
-                                        <th class="p-3">Tecel. (R$)</th>
-                                        <th class="p-3">Frete (R$)</th>
-                                        <th class="p-3">Lucro (R$)</th>
-                                        <th class="p-3 text-center">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adm-lista-produtos">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-md font-bold text-gray-900 flex items-center space-x-2">
-                                <i class="fa-solid fa-palette text-primary"></i>
-                                <span>Tabela de Acabamentos de Cores</span>
-                            </h3>
-                            <button onclick="abrirModalCor()" class="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-blue-950 transition-all">+ Nova Cor</button>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-100">
-                                        <th class="p-3">Tonalidade/Acabamento</th>
-                                        <th class="p-3">Tinturaria (R$)</th>
-                                        <th class="p-3 text-center">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adm-lista-cores">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs min-w-[600px]">
+                    <thead>
+                      <tr
+                        class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-100"
+                      >
+                        <th class="px-5 py-3">Artigo</th>
+                        <th class="px-4 py-3">Fio</th>
+                        <th class="px-4 py-3">Tecel.</th>
+                        <th class="px-4 py-3">Frete</th>
+                        <th class="px-4 py-3">Lucro</th>
+                        <th class="px-4 py-3 text-center">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adm-lista-produtos"></tbody>
+                  </table>
                 </div>
+              </div>
+
+              <!-- Tabela de Cores -->
+              <div
+                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+              >
+                <div
+                  class="flex items-center justify-between px-6 py-4 border-b border-gray-100"
+                >
+                  <h3 class="font-display text-base font-bold text-gray-900">
+                    Cores
+                  </h3>
+                  <button
+                    id="btn-nova-cor"
+                    class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg"
+                  >
+                    Nova Cor
+                  </button>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs min-w-[380px]">
+                    <thead>
+                      <tr
+                        class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-100"
+                      >
+                        <th class="px-5 py-3">Tonalidade</th>
+                        <th class="px-4 py-3">Tinturaria</th>
+                        <th class="px-4 py-3 text-center">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adm-lista-cores"></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-        </section>
+          </div>
+        </div>
+
+        <!-- ABA PRODUÇÃO (★ Itens 2, 4, 5, 6, 8) -->
+        <div id="admin-tab-producao" class="admin-tab-panel hidden space-y-6">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div>
+              <h3 class="font-display text-2xl font-black text-gray-900">
+                Controle de Produção e Pedidos
+              </h3>
+            </div>
+            <div class="flex items-center gap-3">
+              <button
+                id="btn-export-sheets"
+                class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+              >
+                <i class="fa-solid fa-file-excel"></i> Exportar para Google
+                Sheets
+              </button>
+              <div
+                class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold"
+              >
+                <span
+                  class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse inline-block"
+                ></span>
+                Sync Real Time
+              </div>
+            </div>
+          </div>
+
+          <!-- ★ ITEM 6: Contadores de Status -->
+          <div class="grid grid-cols-3 gap-4">
+            <div
+              class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center"
+            >
+              <div
+                class="text-3xl font-black text-blue-600 font-display"
+                id="count-fabricacao"
+              >
+                0
+              </div>
+              <div
+                class="text-xs font-bold text-blue-800 uppercase tracking-widest mt-1"
+              >
+                Em Fabricação
+              </div>
+            </div>
+            <div
+              class="bg-green-50 border border-green-100 rounded-xl p-4 text-center"
+            >
+              <div
+                class="text-3xl font-black text-green-600 font-display"
+                id="count-prontos"
+              >
+                0
+              </div>
+              <div
+                class="text-xs font-bold text-green-800 uppercase tracking-widest mt-1"
+              >
+                Prontos
+              </div>
+            </div>
+            <div
+              class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center"
+            >
+              <div
+                class="text-3xl font-black text-emerald-600 font-display"
+                id="count-entregues"
+              >
+                0
+              </div>
+              <div
+                class="text-xs font-bold text-emerald-800 uppercase tracking-widest mt-1"
+              >
+                Entregues
+              </div>
+            </div>
+          </div>
+
+          <!-- ★ ITEM 2: Busca na Produção -->
+          <div>
+            <input
+              type="text"
+              id="search-production"
+              placeholder="Buscar por cliente ou produto..."
+              class="pf-input"
+              style="max-width: 400px"
+            />
+          </div>
+
+          <!-- Tabela de Produção -->
+          <div
+            class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs min-w-[1100px]">
+                <thead>
+                  <tr
+                    class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200 text-[10px] tracking-wide"
+                  >
+                    <th class="px-4 py-3 whitespace-nowrap">ID Pedido</th>
+                    <th class="px-4 py-3 whitespace-nowrap">Cliente</th>
+                    <th class="px-4 py-3 whitespace-nowrap">Produto</th>
+                    <th class="px-4 py-3 whitespace-nowrap">Qtd (kg)</th>
+                    <th class="px-4 py-3 whitespace-nowrap">Data</th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">
+                      Prazo (Dias Restantes)
+                    </th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">Fio</th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">
+                      Tecelagem
+                    </th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">
+                      Tinturaria
+                    </th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">
+                      Logística
+                    </th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">
+                      Status Final
+                    </th>
+                    <th class="px-4 py-3 whitespace-nowrap text-center">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="producao-lista-pedidos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <footer class="bg-gray-900 text-gray-400 py-8 border-t border-gray-800 text-xs mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center space-x-2 text-white font-bold">
-                <i class="fa-solid fa-scissors"></i>
-                <span>PRIME FIOS INDUSTRIAL</span>
-            </div>
-            <div>&copy; 2026 Prime Fios. Todos os direitos reservados. Engenharia Têxtil Integrada.</div>
+    <footer class="bg-gray-900 text-gray-400 text-xs mt-auto">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 md:grid-cols-3 gap-8"
+      >
+        <div>
+          <div
+            class="flex items-center gap-2 text-white font-bold font-display text-base tracking-wide mb-3"
+          >
+            <i class="fa-solid fa-scissors"></i> PRIME FIOS INDUSTRIAL
+          </div>
+          <p class="mb-2">
+            Especialistas em facção de malhas com qualidade, agilidade e os
+            melhores preços do mercado.
+          </p>
         </div>
+        <div>
+          <h4
+            class="text-white font-bold mb-3 uppercase tracking-wider text-sm"
+          >
+            Contato
+          </h4>
+          <p class="mb-1">
+            <strong>WhatsApp:</strong> <span class="footer-whatsapp">---</span>
+          </p>
+          <p class="mb-1">
+            <strong>E-mail:</strong> <span class="footer-email">---</span>
+          </p>
+          <p><strong>Horário:</strong> Seg. a Sex. das 08h às 18h</p>
+        </div>
+        <div>
+          <h4
+            class="text-white font-bold mb-3 uppercase tracking-wider text-sm"
+          >
+            Acesso Rápido
+          </h4>
+          <div class="flex flex-col gap-2">
+            <a
+              href="#"
+              class="hover:text-white transition-colors"
+              onclick="Navigation.switchPage('home')"
+              >🏠 Início</a
+            >
+            <a
+              href="#"
+              class="hover:text-white transition-colors"
+              onclick="Navigation.switchPage('orcamento')"
+              >💰 Orçamento Online</a
+            >
+            <a
+              href="#"
+              class="hover:text-white transition-colors"
+              onclick="Navigation.switchPage('admin')"
+              >🔒 Área Restrita</a
+            >
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-gray-800">
+        <div
+          class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-3 opacity-60"
+        >
+          <p>
+            &copy; 2026 Prime Fios. Todos os direitos reservados. CNPJ:
+            00.000.000/0001-00
+          </p>
+          <p>Rua Industrial da Malha, 1234 - Brusque - SC</p>
+        </div>
+      </div>
     </footer>
 
+    <!-- Flutuante Whatsapp -->
+    <a
+      href="#"
+      id="floating-whatsapp"
+      target="_blank"
+      class="fixed bottom-6 right-6 bg-emerald-500 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg hover:bg-emerald-600 transition-transform hover:scale-110 z-[90] hidden"
+    >
+      <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <!-- Modais -->
+    <div
+      id="modal-login"
+      class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm p-4"
+    >
+      <div class="modal-card bg-white rounded-3xl p-8 max-w-sm w-full">
+        <div class="text-center mb-6">
+          <h3 class="font-display text-2xl font-black text-gray-900">
+            Acesso Restrito
+          </h3>
+        </div>
+        <form id="form-login" class="space-y-4">
+          <input
+            type="password"
+            id="input-senha"
+            class="pf-input text-center font-bold text-lg"
+            placeholder="••••••••••"
+          />
+          <div class="flex gap-3 pt-1">
+            <button
+              type="button"
+              class="btn-close-modal w-1/2 bg-gray-100 py-3 rounded-xl font-bold"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              id="btn-submit-login"
+              class="w-1/2 bg-primary text-white py-3 rounded-xl font-bold"
+            >
+              Acessar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      id="modal-produto"
+      class="pf-modal flex fixed inset-0 bg-black/60 z-[100] items-center justify-center backdrop-blur-sm p-4"
+    >
+      <div
+        class="modal-card bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-md w-full"
+      >
+        <div class="text-center mb-6">
+          <h3
+            class="font-display text-2xl font-black text-gray-900 dark:text-gray-100"
+            id="modal-produto-title"
+          >
+            Novo Produto
+          </h3>
+        </div>
+        <form id="form-produto" class="space-y-4">
+          <input type="hidden" id="prod-id" />
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+              >Nome do Produto</label
+            >
+            <input type="text" id="prod-nome" class="pf-input" required />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+                >Fio (R$)</label
+              >
+              <input
+                type="number"
+                step="0.01"
+                id="prod-fio"
+                class="pf-input"
+                required
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+                >Tecelagem (R$)</label
+              >
+              <input
+                type="number"
+                step="0.01"
+                id="prod-tecelagem"
+                class="pf-input"
+                required
+              />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+                >Frete (R$)</label
+              >
+              <input
+                type="number"
+                step="0.01"
+                id="prod-frete"
+                class="pf-input"
+                required
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+                >Lucro (%)</label
+              >
+              <input
+                type="number"
+                step="1"
+                id="prod-lucro"
+                class="pf-input"
+                required
+              />
+            </div>
+          </div>
+          <div class="flex gap-3 pt-3">
+            <button
+              type="button"
+              class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 py-3 rounded-xl font-bold dark:text-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="w-1/2 bg-primary hover:bg-blue-900 text-white py-3 rounded-xl font-bold"
+            >
+              Salvar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      id="modal-cor"
+      class="pf-modal flex fixed inset-0 bg-black/60 z-[100] items-center justify-center backdrop-blur-sm p-4"
+    >
+      <div
+        class="modal-card bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-sm w-full"
+      >
+        <div class="text-center mb-6">
+          <h3
+            class="font-display text-2xl font-black text-gray-900 dark:text-gray-100"
+            id="modal-cor-title"
+          >
+            Nova Cor
+          </h3>
+        </div>
+        <form id="form-cor" class="space-y-4">
+          <input type="hidden" id="cor-id" />
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+              >Nome da Cor</label
+            >
+            <input type="text" id="cor-nome" class="pf-input" required />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
+              >Tinturaria (R$)</label
+            >
+            <input
+              type="number"
+              step="0.01"
+              id="cor-tinturaria"
+              class="pf-input"
+              required
+            />
+          </div>
+          <div class="flex gap-3 pt-3">
+            <button
+              type="button"
+              class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 py-3 rounded-xl font-bold dark:text-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="w-1/2 bg-primary hover:bg-blue-900 text-white py-3 rounded-xl font-bold"
+            >
+              Salvar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyC77VdzqV7ej9stsdLWZnn0ssfpVLLLpCY",
-          authDomain: "prime-fios.firebaseapp.com",
-          databaseURL: "https://prime-fios-default-rtdb.firebaseio.com",
-          projectId: "prime-fios",
-          storageBucket: "prime-fios.firebasestorage.app",
-          messagingSenderId: "253459161111",
-          appId: "1:253459161111:web:695b252485d29d285afc52",
-          measurementId: "G-GMX6HZE35D"
-        };
+      // Firebase Config
+      const firebaseConfig = {
+        apiKey: "AIzaSyC77VdzqV7ej9stsdLWZnn0ssfpVLLLpCY",
+        authDomain: "prime-fios.firebaseapp.com",
+        databaseURL: "https://prime-fios-default-rtdb.firebaseio.com",
+        projectId: "prime-fios",
+        storageBucket: "prime-fios.firebasestorage.app",
+        messagingSenderId: "253459161111",
+        appId: "1:253459161111:web:695b252485d29d285afc52",
+        measurementId: "G-GMX6HZE35D",
+      };
 
-        // Inicializa o Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      const dbRef = db.ref("dadosPrimeFios");
+      const pedidosRef = db.ref("pedidosPrimeFios");
 
-        // BANCO DE DADOS LOCAL (Valores padrão de fábrica caso a nuvem esteja vazia)
-        let dbProdutos = [
-            { id: 'p1', nome: 'Malha 24 OE', fio: 17.00, tecelagem: 1.70, frete: 0.50, lucro: 1.00 },
-            { id: 'p2', nome: 'Malha Fio 26', fio: 19.50, tecelagem: 1.80, frete: 0.50, lucro: 1.20 },
-            { id: 'p3', nome: 'Moletom Premium', fio: 22.00, tecelagem: 2.50, frete: 0.60, lucro: 1.50 }
-        ];
-
-        let dbCores = [
-            { id: 'c1', nome: 'Branco', tinturaria: 4.20 },
-            { id: 'c2', nome: 'Preto', tinturaria: 5.50 },
-            { id: 'c3', nome: 'Cores Especiais / Escuras', tinturaria: 6.80 }
-        ];
-
-        let dbContatos = {
-            whatsapp: '47989105183',
-            email: 'primefios2@gmail.com'
-        };
-
-        // ========================================================================
-        //  CONEXÃO E SINCRONIZAÇÃO EM TEMPO REAL COM O FIREBASE REALTIME DATABASE
-        // ========================================================================
-        database.ref('dadosPrimeFios').on('value', (snapshot) => {
-            const dadosNuvem = snapshot.val();
-            
-            if (dadosNuvem) {
-                if (dadosNuvem.produtos) dbProdutos = dadosNuvem.produtos;
-                if (dadosNuvem.cores) dbCores = dadosNuvem.cores;
-                if (dadosNuvem.contatos) dbContatos = dadosNuvem.contatos;
-                
-                renderizarOpcoesFormulario();
-                renderizarPainelAdmin();
-                executarCalculoOrcamento();
-                atualizarTextosContatoPublicos();
-            } else {
-                salvarDadosNuvem();
-            }
+      // Utilitários globais
+      const formatBRL = (val) =>
+        Number(val || 0).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
         });
 
-        // FUNÇÃO PARA SALVAR OS DADOS NA NUVEM
-        function salvarDadosNuvem() {
-            database.ref('dadosPrimeFios').set({
-                produtos: dbProdutos,
-                cores: dbCores,
-                contatos: dbContatos
-            }).then(() => {
-                console.log("Dados sincronizados no Firebase.");
-            }).catch((error) => {
-                console.error("Erro ao salvar no Firebase:", error);
-                alert("❌ Erro ao salvar os dados na nuvem.");
-            });
+      function maskPhone(value) {
+        if (!value) return "";
+        value = value.replace(/\D/g, "");
+        if (value.length > 11) value = value.slice(0, 11);
+        value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
+        value = value.replace(/(\d)(\d{4})$/, "$1-$2");
+        return value;
+      }
+
+      document.addEventListener("input", function (e) {
+        if (e.target.classList.contains("whats-mask")) {
+          e.target.value = maskPhone(e.target.value);
+        }
+      });
+
+      // ★ ITEM 3: FLAG DE MUDANÇAS NÃO SALVAS (hasUnsavedChanges)
+      const AppState = {
+        produtos: {},
+        cores: {},
+        contatos: { whatsapp: "", email: "" },
+        custoPiquet: 0,
+        senha: "Mortadela123",
+        urlSheets: "", // ★ ITEM 4
+        hasUnsavedChanges: false,
+        dbReady: false,
+        pedidos: {},
+        get isAdminLogado() {
+          return sessionStorage.getItem("pf_admin_session") === "true";
+        },
+        setAdminLogado(value) {
+          if (value) sessionStorage.setItem("pf_admin_session", "true");
+          else sessionStorage.removeItem("pf_admin_session");
+        },
+        currentPage: "home",
+      };
+
+      // ★ ITEM 7: DARK MODE TOGGLE
+      function initDarkMode() {
+        const isDark = localStorage.getItem("theme") === "dark";
+        if (isDark) document.documentElement.classList.add("dark");
+
+        document
+          .getElementById("btn-toggle-dark")
+          ?.addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
+            const darkActive =
+              document.documentElement.classList.contains("dark");
+            localStorage.setItem("theme", darkActive ? "dark" : "light");
+          });
+      }
+
+      const Toast = (() => {
+        function show(message, type = "success", duration = 3500) {
+          const container = document.getElementById("toast-container");
+          const bg =
+            type === "success"
+              ? "bg-emerald-500"
+              : type === "error"
+                ? "bg-red-500"
+                : "bg-secondary";
+          const el = document.createElement("div");
+          el.className = `${bg} text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-semibold toast-in`;
+          el.innerHTML = `<span>${message}</span>`;
+          container.appendChild(el);
+          setTimeout(() => {
+            el.classList.remove("toast-in");
+            el.classList.add("toast-out");
+            setTimeout(() => el.remove(), 300);
+          }, duration);
+        }
+        return { show };
+      })();
+
+      const Modal = (() => {
+        function open(id) {
+          document.getElementById(id)?.classList.add("open");
+        }
+        function close(id) {
+          document.getElementById(id)?.classList.remove("open");
+        }
+        return { open, close };
+      })();
+
+      const Navigation = {
+        switchPage(target) {
+          if (target === "admin" && !AppState.isAdminLogado)
+            return Modal.open("modal-login");
+          ["home", "orcamento", "contato", "admin"].forEach((p) => {
+            const el = document.getElementById(`page-${p}`);
+            if (el) el.classList.remove("is-active");
+          });
+          document.getElementById(`page-${target}`)?.classList.add("is-active");
+          AppState.currentPage = target;
+          if (target === "admin") Renderer.renderAdminPanel();
+        },
+      };
+
+      const DataStore = (() => {
+        let _dbTimeoutHandle = setTimeout(() => {
+          if (!AppState.dbReady)
+            document.getElementById("banner-db-error")?.classList.add("show");
+        }, 8000);
+
+        function initSync() {
+          dbRef.on("value", (snapshot) => {
+            const data = snapshot.val();
+            clearTimeout(_dbTimeoutHandle);
+            AppState.dbReady = true;
+            document
+              .getElementById("banner-db-error")
+              ?.classList.remove("show");
+
+            // ★ ITEM 8: INDICADOR DE ÚLTIMO SYNC
+            const syncEl = document.getElementById("param-sync-indic");
+            if (syncEl)
+              syncEl.textContent =
+                "Última sincronização: " +
+                new Date().toLocaleTimeString("pt-BR");
+
+            if (data) {
+              AppState.produtos = data.produtos || {};
+              AppState.cores = data.cores || {};
+              AppState.contatos = data.contatos || {};
+              AppState.custoPiquet = parseFloat(data.custoPiquet) || 0;
+              AppState.senha = data.senha || "Mortadela123";
+              AppState.urlSheets = data.urlSheets || ""; // ITEM 4
+              Renderer.updateAll();
+            }
+          });
+
+          pedidosRef.on("value", (snapshot) => {
+            AppState.pedidos = snapshot.val() || {};
+            if (AppState.isAdminLogado) Renderer.renderProducaoTable();
+          });
         }
 
-        // NAVEGAÇÃO ENTRE PÁGINAS (SPA) - CORRIGIDA
-        function switchPage(targetId) {
-            if (targetId === 'admin') {
-                const senhaDefinida = "Mortadela123";
-                const senhaDigitada = prompt("Digite a senha de administrador para acessar as configurações:");
-                
-                if (senhaDigitada !== senhaDefinida) {
-                    alert("❌ Senha incorreta! Acesso negado.");
-                    return;
-                }
+        async function save() {
+          try {
+            await dbRef.update({
+              produtos: AppState.produtos,
+              cores: AppState.cores,
+              contatos: AppState.contatos,
+              custoPiquet: AppState.custoPiquet,
+              senha: AppState.senha,
+              urlSheets: AppState.urlSheets,
+            });
+            AppState.hasUnsavedChanges = false; // ITEM 3 reseta flag
+            Toast.show("Alterações salvas com sucesso!", "success");
+          } catch (err) {
+            Toast.show("Erro ao salvar.", "error");
+          }
+        }
+
+        async function updatePedidoStatus(pedidoId, campo, valor) {
+          await pedidosRef.child(pedidoId).update({ [campo]: valor });
+        }
+        return { initSync, save, updatePedidoStatus };
+      })();
+
+      const Calculator = (() => {
+        let timer = null;
+        function runAndRender() {
+          const selProd = document.getElementById("sel-produto");
+          const selCor = document.getElementById("sel-cor");
+          const p = AppState.produtos[selProd?.value];
+          const c = AppState.cores[selCor?.value];
+          const qtd =
+            parseFloat(document.getElementById("sel-quantidade")?.value) || 0;
+          if (!p || !c || !qtd) return;
+
+          const panel = document.getElementById("painel-resultados");
+          if (panel) {
+            panel.classList.add("opacity-50", "scale-[0.98]");
+          }
+
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            const isPiquet = /piquet/i.test(p.nome);
+            const extra = isPiquet ? parseFloat(AppState.custoPiquet) : 0;
+            const pKg =
+              parseFloat(p.fio) +
+              parseFloat(p.tecelagem) +
+              parseFloat(c.tinturaria) +
+              parseFloat(p.frete) +
+              parseFloat(p.lucro) +
+              extra;
+            const total = pKg * qtd;
+            const sinal = parseFloat(p.fio) * qtd;
+
+            document.getElementById("res-preco-kg").textContent =
+              formatBRL(pKg);
+            document.getElementById("res-valor-total").textContent =
+              formatBRL(total);
+            document.getElementById("res-sinal").textContent = formatBRL(sinal);
+            document.getElementById("res-entrega").textContent = formatBRL(
+              total - sinal,
+            );
+
+            const bd = document.getElementById("res-breakdown");
+            if (bd) {
+              const formatBRLAux = formatBRL;
+              bd.classList.remove("hidden");
+              let piqLine = "";
+              if (isPiquet && extra > 0) {
+                piqLine = `<p>Gola/Punho Piquet: <span class="text-white">${formatBRLAux(extra)}</span></p>`;
+              }
+              bd.innerHTML = `
+                  <p class="font-bold text-blue-300 mb-1 uppercase tracking-wide text-[10px]">Composição do Kg:</p>
+                  <p>Fio: <span class="text-white">${formatBRLAux(p.fio)}</span>
+                     &nbsp;|&nbsp; Tecel.: <span class="text-white">${formatBRLAux(p.tecelagem)}</span></p>
+                  <p>Tinturaria/Lucro: <span class="text-white">${formatBRLAux(parseFloat(c.tinturaria) + parseFloat(p.lucro))}</span>
+                     &nbsp;|&nbsp; Frete: <span class="text-white">${formatBRLAux(p.frete)}</span></p>
+                  ${piqLine}
+              `;
             }
 
-            document.querySelectorAll('.page-section').forEach(sec => sec.classList.add('hidden'));
-            
-            const targetSection = document.getElementById(`page-${targetId}`);
-            if (targetSection) {
-                targetSection.classList.remove('hidden');
+            if (panel) {
+              panel.classList.remove("opacity-50", "scale-[0.98]");
             }
-
-            ['home', 'orcamento', 'contato', 'admin'].forEach(link => {
-                const btn = document.getElementById(`nav-${link}`);
-                if (btn) {
-                    if (link === targetId) {
-                        if (link === 'admin') {
-                            btn.className = "bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center space-x-2 shadow-md";
-                        } else {
-                            btn.className = "hover:text-primary transition-colors text-primary border-b-2 border-primary pb-1";
-                        }
-                    } else {
-                        if (link === 'admin') {
-                            btn.className = "bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center space-x-2";
-                        } else {
-                            btn.className = "hover:text-primary transition-colors pb-1";
-                        }
-                    }
-                }
-            });
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 350); // delay suave
         }
 
-        // CONVERSOR FINANCEIRO
-        function formatarBRL(valor) {
-            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-function executarCalculoOrcamento() {
-            const selectProduto = document.getElementById('produto');
-            const selectCor = document.getElementById('cor');
-            const selectQuantidade = document.getElementById('quantidade');
+        function dispatchLead(channel) {
+          if (!AppState.dbReady)
+            return Toast.show("Aguarde os dados...", "warning");
+          const selProd = document.getElementById("sel-produto");
+          const selCor = document.getElementById("sel-cor");
+          const qtd = document.getElementById("sel-quantidade")?.value;
+          const clienteNome = document
+            .getElementById("input-cliente-nome")
+            ?.value.trim();
+          const clienteWhats = document
+            .getElementById("input-cliente-whats")
+            ?.value.trim();
+          const product = selProd.options[selProd.selectedIndex].text;
+          const color = selCor.options[selCor.selectedIndex].text;
+          const pKgStr = document.getElementById("res-preco-kg").textContent;
+          const totalStr =
+            document.getElementById("res-valor-total").textContent;
+          const sinalStr = document.getElementById("res-sinal").textContent;
+          const entregaStr = document.getElementById("res-entrega").textContent;
 
-            if (!selectProduto || !selectCor || !selectQuantidade) return;
-            if (!selectProduto.value || !selectCor.value || !selectQuantidade.value) return;
+          if (!selProd?.value || !selCor?.value)
+            return Toast.show("Preencha os campos", "warning");
 
-            const quantity = parseFloat(selectQuantidade.value);
-            if (isNaN(quantity) || quantity <= 0) return;
+          // ★ ITEM 1 e 5: AUTO-REGISTRO NO BANDO DE DADOS (Push assíncrono para Tabela Produção)
+          const prazoE = new Date();
+          prazoE.setDate(prazoE.getDate() + 35); // 35 dias default
 
-            const prod = dbProdutos.find(p => p.id === selectProduto.value);
-            const color = dbCores.find(c => c.id === selectCor.value);
+          pedidosRef
+            .push({
+              clienteNome: clienteNome || "Novo Lead",
+              clienteWhats: clienteWhats || "",
+              produto: product + " / " + color,
+              quantidade: qtd,
+              valorTotal: totalStr,
+              data: new Date().toISOString(),
+              prazoEntrega: prazoE.toISOString(),
+              statusFio: "A Comprar",
+              statusTecelagem: "Aguardando Fio",
+              statusTinturaria: "Aguardando Lote",
+              statusLogistica: "Aguardando Coleta",
+              statusFinal: "Em Fabricação",
+            })
+            .then(() => {
+              Toast.show("Pedido auto-registrado na produção!", "success");
+            })
+            .catch((err) => console.error(err));
 
-            if (!prod || !color) return;
-
-            const fio = parseFloat(prod.fio) || 0;
-            const tecelagem = parseFloat(prod.tecelagem) || 0;
-            const frete = parseFloat(prod.frete) || 0;
-            const lucro = parseFloat(prod.lucro) || 0;
-            const tinturaria = parseFloat(color.tinturaria) || 0;
-
-            const precoKg = fio + tecelagem + tinturaria + frete + lucro;
-            const valorTotal = precoKg * quantity;
-            const sinal = fio * quantity;
-            const entrega = valorTotal - sinal;
-
-            document.getElementById('res-preco-kg').textContent = formatarBRL(precoKg);
-            document.getElementById('res-valor-total').textContent = formatarBRL(valorTotal);
-            document.getElementById('res-sinal').textContent = formatarBRL(sinal);
-            document.getElementById('res-entrega').textContent = formatarBRL(entrega);
-        }
-
-        // DISPARADORES DE MENSAGENS COM LEADS
-        function enviarOrcamento(canal) {
-            const selectProd = document.getElementById('produto');
-            const selectCor = document.getElementById('cor');
-            
-            const nomeProd = selectProd.options[selectProd.selectedIndex].text;
-            const nomeCor = selectCor.options[selectCor.selectedIndex].text;
-            const qtd = document.getElementById('quantidade').value;
-
-            const precoKg = document.getElementById('res-preco-kg').innerText;
-            const total = document.getElementById('res-valor-total').innerText;
-            const sinal = document.getElementById('res-sinal').innerText;
-            const entrega = document.getElementById('res-entrega').innerText;
-
-            const mensagem = `SOLICITAÇÃO DE ORÇAMENTO TÊXTIL\n\n` +
+          const msg = `*SOLICITAÇÃO DE ORÇAMENTO TÊXTIL*
 --------------------------------------------------
-`Produto: ${nomeProd}\n` +
-`Quantidade: ${qtd} kg\n` +
-`Cor Escolhida: ${nomeCor}\n` +
+*Produto:* ${product}
+*Quantidade:* ${qtd} kg
+*Cor Escolhida:* ${color}
 
-`VALORES DO ORÇAMENTO: \n\n` +
-`* *Preço por kg*: ${precoKg}\n` +
-`* VALOR TOTAL: ${total}\n` +
+*VALORES DO ORÇAMENTO:*
+• Preço por kg: ${pKgStr}
+• *VALOR TOTAL:* ${totalStr}
 
-`CONDIÇÕES DE PAGAMENTO: \n\n` +
-`* Passo 1 (Sinal): ${sinal}\n` +
-`  (Inicialmente somente a matéria-prima - Fio) \n` +
-`* Passo 2 (Entrega): ${entrega}\n` +
-`  (Após terminar toda a produção da malha) \n\n` +
+*CONDIÇÕES DE PAGAMENTO:*
+• *Passo 1 (Sinal):* ${sinalStr}
+  _(Inicialmente somente a matéria-prima - Fio)_
+• *Passo 2 (Entrega):* ${entregaStr}
+  _(Após terminar toda a produção da malha)_
 
-`--------------------------------------------------
-`*Atenção: Prazo médio de fabricação de 25 a 45 dias.* \n` +
-`*Sujeito a variação de quebra (percas) de 6% a 8%*
-                             
-            if (canal === 'whatsapp') {
-                if (!dbContatos.whatsapp) {
-                    alert('Erro: Destinatário do WhatsApp não configurado no Painel Admin.');
-                    switchPage('admin');
-                    return;
-                }
-                window.open(`https://api.whatsapp.com/send?phone=${dbContatos.whatsapp.replace(/\D/g, '')}&text=${encodeURIComponent(mensagem)}`, '_blank');
-            } else if (canal === 'email') {
-                if (!dbContatos.email) {
-                    alert('Erro: Destinatário de E-mail não configurado no Painel Admin.');
-                    switchPage('admin');
-                    return;
-                }
-                window.open(`mailto:${dbContatos.email}?subject=Solicitação de Orçamento Têxtil - Prime Fios&body=${encodeURIComponent(mensagem)}`, '_blank');
+--------------------------------------------------
+_Atenção: Prazo médio de fabricação de 25 a 45 dias._
+_Sujeito a variação de quebra (percas) de 6% a 8%._`;
+
+          // Open WhatsApp/Email url
+          let phone = AppState.contatos.whatsapp.replace(/\D/g, "");
+          if (channel === "whatsapp") {
+            window.open(
+              `https://api.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`,
+              "_blank",
+            );
+          } else if (channel === "email") {
+            const emailAddr =
+              AppState.contatos.email || "contato@empresa.com.br";
+            window.open(
+              `mailto:${emailAddr}?subject=${encodeURIComponent("Solicitação de Orçamento Têxtil")}&body=${encodeURIComponent(msg)}`,
+              "_blank",
+            );
+          }
+
+          // Limpar lead
+          const elNome = document.getElementById("input-cliente-nome");
+          if (elNome) elNome.value = "";
+          const elWhats = document.getElementById("input-cliente-whats");
+          if (elWhats) elWhats.value = "";
+        }
+        return { runAndRender, dispatchLead };
+      })();
+
+      const Renderer = (() => {
+        function updateAll() {
+          const selProd = document.getElementById("sel-produto");
+          const selCor = document.getElementById("sel-cor");
+
+          if (selProd) {
+            selProd.innerHTML =
+              '<option value="" disabled selected>Escolha o Artigo…</option>';
+            Object.entries(AppState.produtos).forEach(
+              ([id, p]) =>
+                (selProd.innerHTML += `<option value="${id}">${p.nome}</option>`),
+            );
+          }
+          if (selCor) {
+            selCor.innerHTML =
+              '<option value="" disabled selected>Escolha a Tonalidade…</option>';
+            Object.entries(AppState.cores).forEach(
+              ([id, c]) =>
+                (selCor.innerHTML += `<option value="${id}">${c.nome}</option>`),
+            );
+          }
+
+          document
+            .getElementById("skeleton-orcamento")
+            ?.classList.add("hidden");
+          document.getElementById("form-orcamento")?.classList.remove("hidden");
+
+          document.getElementById("contato-txt-whats").textContent =
+            AppState.contatos.whatsapp || "---";
+          document.getElementById("contato-txt-email").textContent =
+            AppState.contatos.email || "---";
+
+          document
+            .querySelectorAll(".footer-whatsapp")
+            .forEach(
+              (el) => (el.textContent = AppState.contatos.whatsapp || "---"),
+            );
+          document
+            .querySelectorAll(".footer-email")
+            .forEach(
+              (el) => (el.textContent = AppState.contatos.email || "---"),
+            );
+
+          if (AppState.contatos.whatsapp) {
+            const phoneStr = AppState.contatos.whatsapp.replace(/\D/g, "");
+            document
+              .getElementById("floating-whatsapp")
+              ?.setAttribute(
+                "href",
+                `https://api.whatsapp.com/send?phone=55${phoneStr}`,
+              );
+            document
+              .getElementById("floating-whatsapp")
+              ?.classList.remove("hidden");
+          }
+
+          if (AppState.isAdminLogado) renderAdminPanel();
+        }
+
+        function renderAdminPanel() {
+          document.getElementById("adm-whats").value =
+            AppState.contatos.whatsapp || "";
+          document.getElementById("adm-email").value =
+            AppState.contatos.email || "";
+          document.getElementById("adm-custo-piquet").value =
+            AppState.custoPiquet || 0;
+          document.getElementById("adm-url-sheets").value =
+            AppState.urlSheets || ""; // ITEM 4
+
+          // Render tabelas config completas
+          document.getElementById("adm-lista-produtos").innerHTML =
+            Object.entries(AppState.produtos)
+              .map(
+                ([id, p]) => `
+            <tr class="adm-tr border-b border-gray-100 last:border-0 transition-colors">
+                <td class="px-5 py-3 font-semibold text-gray-800 dark:text-gray-200">${p.nome}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(p.fio)}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(p.tecelagem)}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(p.frete)}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${Number(p.lucro || 0)}%</td>
+                <td class="px-4 py-3 text-center">
+                    <button class="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50" onclick="Admin.deleteProduto('${id}')" title="Excluir"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <button class="bg-blue-50 text-blue-500 hover:bg-blue-100 p-1.5 rounded ml-1 dark:bg-blue-900/30 dark:hover:bg-blue-900/50" onclick="Admin.editProduto('${id}')" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
+                </td>
+            </tr>
+        `,
+              )
+              .join("");
+
+          document.getElementById("adm-lista-cores").innerHTML = Object.entries(
+            AppState.cores,
+          )
+            .map(
+              ([id, c]) => `
+            <tr class="adm-tr border-b border-gray-100 last:border-0 transition-colors">
+                <td class="px-5 py-3 font-semibold text-gray-800 dark:text-gray-200">${c.nome}</td>
+                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(c.tinturaria)}</td>
+                <td class="px-4 py-3 text-center">
+                    <button class="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50" onclick="Admin.deleteCor('${id}')" title="Excluir"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <button class="bg-blue-50 text-blue-500 hover:bg-blue-100 p-1.5 rounded ml-1 dark:bg-blue-900/30 dark:hover:bg-blue-900/50" onclick="Admin.editCor('${id}')" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
+                </td>
+            </tr>
+        `,
+            )
+            .join("");
+
+          renderProducaoTable();
+        }
+
+        // ★ ITEM 5 e 6: COLUNA PRAZO (DIAS) E CONTADORES
+        function renderProducaoTable() {
+          const tbody = document.getElementById("producao-lista-pedidos");
+          if (!tbody) return;
+          const entries = Object.entries(AppState.pedidos);
+
+          let fabCount = 0,
+            prontoCount = 0,
+            entrCount = 0;
+
+          tbody.innerHTML = entries
+            .map(([id, pedido]) => {
+              // ITEM 6: Counters
+              if (pedido.statusFinal === "Em Fabricação") fabCount++;
+              else if (pedido.statusFinal === "Pronto") prontoCount++;
+              else if (pedido.statusFinal === "Entregue") entrCount++;
+
+              // Selects setup
+              const selects = [
+                { c: "statusFio", o: ["A Comprar", "Comprado", "Em Estoque"] },
+                {
+                  c: "statusTecelagem",
+                  o: ["Aguardando Fio", "Em Produção", "Concluído"],
+                },
+                {
+                  c: "statusTinturaria",
+                  o: ["Aguardando Lote", "Em Processo", "Concluído"],
+                },
+                {
+                  c: "statusLogistica",
+                  o: [
+                    "Aguardando Coleta",
+                    "Em Trânsito",
+                    "Disponível para Retirada",
+                  ],
+                },
+                {
+                  c: "statusFinal",
+                  o: ["Em Fabricação", "Pronto", "Entregue"],
+                },
+              ]
+                .map((def) => {
+                  const val = pedido[def.c] || def.o[0];
+                  return `<td class="p-1"><select class="status-select p-1 bg-gray-50 border-gray-300 w-full producao-status-select dark:bg-gray-700" data-f="${def.c}" data-i="${id}">
+                   ${def.o.map((opt) => `<option value="${opt}" ${opt === val ? "selected" : ""}>${opt}</option>`).join("")}
+                </select></td>`;
+                })
+                .join("");
+
+              // ITEM 5: Calculo de Badges de prazo
+              let htmlPrazo = "-";
+              if (pedido.prazoEntrega) {
+                const diff =
+                  (new Date(pedido.prazoEntrega) - new Date()) /
+                  (1000 * 3600 * 24);
+                const d = Math.ceil(diff);
+                const badge =
+                  d > 5
+                    ? "bg-green-100 text-green-700"
+                    : d >= 2
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-red-100 text-red-700";
+                const dataStr = new Date(
+                  pedido.prazoEntrega,
+                ).toLocaleDateString("pt-BR");
+                htmlPrazo = `<span class="px-2 py-1 ${badge} rounded-md text-xs font-bold">${dataStr} (${d}d)</span>`;
+              }
+
+              return `<tr class="adm-tr border-b border-gray-200">
+                <td class="p-2 text-[10px] uppercase font-mono">${id.substring(1, 8)}</td>
+                <td class="p-2 font-bold">${pedido.clienteNome || "-"}</td>
+                <td class="p-2">${pedido.produto || "-"}</td>
+                <td class="p-2">${pedido.quantidade || "-"}kg</td>
+                <td class="p-2">${new Date(pedido.data).toLocaleDateString("pt-BR")}</td>
+                <td class="p-2 text-center">${htmlPrazo}</td>
+                ${selects}
+                <td class="p-2 text-center">
+                  <button class="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50" onclick="Admin.deletePedido('${id}')" title="Excluir"><i class="fa-solid fa-trash text-xs"></i></button>
+                </td>
+            </tr>`;
+            })
+            .join("");
+
+          // ITEM 6: Updating Header Counters
+          const setTxt = (id, val) => {
+            if (document.getElementById(id))
+              document.getElementById(id).textContent = val;
+          };
+          setTxt("count-fabricacao", fabCount);
+          setTxt("count-prontos", prontoCount);
+          setTxt("count-entregues", entrCount);
+        }
+        return { updateAll, renderAdminPanel, renderProducaoTable };
+      })();
+
+      const Admin = (() => {
+        function init() {
+          // Tab switching
+          document.querySelectorAll(".admin-tab-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              document
+                .querySelectorAll(".admin-tab-btn")
+                .forEach((b) =>
+                  b.classList.remove("border-primary", "text-primary"),
+                );
+              btn.classList.add("border-primary", "text-primary");
+              document
+                .querySelectorAll(".admin-tab-panel")
+                .forEach((p) => p.classList.add("hidden"));
+              document
+                .getElementById(`admin-tab-${btn.dataset.tab}`)
+                .classList.remove("hidden");
+            });
+          });
+
+          // Config Forms
+          ["form-admin-contatos", "form-admin-piquet"].forEach((id) => {
+            document.getElementById(id)?.addEventListener("submit", (e) => {
+              e.preventDefault();
+              AppState.contatos.whatsapp =
+                document.getElementById("adm-whats").value;
+              AppState.contatos.email =
+                document.getElementById("adm-email").value;
+              AppState.custoPiquet =
+                document.getElementById("adm-custo-piquet").value;
+              DataStore.save();
+            });
+          });
+
+          // ★ ITEM 4: Google Sheets Config + Exportar
+          document
+            .getElementById("form-admin-sheets")
+            ?.addEventListener("submit", (e) => {
+              e.preventDefault();
+              AppState.urlSheets =
+                document.getElementById("adm-url-sheets").value;
+              DataStore.save();
+            });
+
+          document
+            .getElementById("btn-export-sheets")
+            ?.addEventListener("click", async () => {
+              if (!AppState.urlSheets)
+                return Toast.show(
+                  "Configure a URL do Google Sheets na aba Configurações primeiro!",
+                  "warning",
+                );
+
+              Toast.show("Exportando dados...", "info");
+              const dataToExport = Object.entries(AppState.pedidos).map(
+                ([id, p]) => ({ id, ...p }),
+              );
+
+              try {
+                await fetch(AppState.urlSheets, {
+                  method: "POST",
+                  mode: "no-cors",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(dataToExport),
+                });
+                Toast.show(
+                  "Dados exportados com sucesso para o Sheets!",
+                  "success",
+                );
+              } catch (err) {
+                Toast.show("Erro na comunicação.", "error");
+              }
+            });
+
+          // Login
+          document
+            .getElementById("form-login")
+            ?.addEventListener("submit", (e) => {
+              e.preventDefault();
+              if (
+                document.getElementById("input-senha").value === AppState.senha
+              ) {
+                AppState.setAdminLogado(true);
+                Modal.close("modal-login");
+                Navigation.switchPage("admin");
+              } else {
+                Toast.show("Senha incorreta", "error");
+              }
+            });
+          document
+            .getElementById("btn-logout")
+            ?.addEventListener("click", () => {
+              AppState.setAdminLogado(false);
+              Navigation.switchPage("home");
+            });
+
+          // Sync Status changes
+          document.addEventListener("change", (e) => {
+            if (e.target.classList.contains("producao-status-select")) {
+              DataStore.updatePedidoStatus(
+                e.target.dataset.i,
+                e.target.dataset.f,
+                e.target.value,
+              );
             }
-        }
+          });
 
-        function renderizarOpcoesFormulario() {
-            const selectProd = document.getElementById('produto');
-            const selectCor = document.getElementById('cor');
+          // ★ ITEM 2: Filtro em Tempo Real (Busca)
+          document
+            .getElementById("search-production")
+            ?.addEventListener("input", (e) => {
+              const term = e.target.value.toLowerCase();
+              document
+                .querySelectorAll("#producao-lista-pedidos tr")
+                .forEach((row) => {
+                  row.style.display = row.textContent
+                    .toLowerCase()
+                    .includes(term)
+                    ? ""
+                    : "none";
+                });
+            });
 
-            if(selectProd && selectCor) {
-                selectProd.innerHTML = dbProdutos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-                selectCor.innerHTML = dbCores.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+          // ★ ITEM 3: Prevenção de Perda de Dados
+          document.addEventListener("input", (e) => {
+            if (AppState.isAdminLogado && e.target.closest("form"))
+              AppState.hasUnsavedChanges = true;
+          });
+          window.addEventListener("beforeunload", (e) => {
+            if (AppState.hasUnsavedChanges) {
+              e.preventDefault();
+              e.returnValue = "";
             }
+          });
         }
 
-        function renderizarPainelAdmin() {
-            const fieldWhats = document.getElementById('adm-whats');
-            const fieldEmail = document.getElementById('adm-email');
-            
-            if(fieldWhats) fieldWhats.value = dbContatos.whatsapp;
-            if(fieldEmail) fieldEmail.value = dbContatos.email;
+        function deletePedido(id) {
+          if (confirm("Tem certeza que deseja apagar este pedido?")) {
+            delete AppState.pedidos[id];
+            DataStore.save();
+            Renderer.renderAdminPanel();
+            Toast.show("Pedido apagado com sucesso!", "success");
+          }
+        }
 
-            const listaProdutos = document.getElementById('adm-lista-produtos');
-            if (listaProdutos) {
-                listaProdutos.innerHTML = dbProdutos.map(p => `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 font-medium">
-                        <td class="p-3 font-bold text-gray-900">${p.nome}</td>
-                        <td class="p-3">${formatarBRL(p.fio)}</td>
-                        <td class="p-3">${formatarBRL(p.tecelagem)}</td>
-                        <td class="p-3">${formatarBRL(p.frete)}</td>
-                        <td class="p-3">${formatarBRL(p.lucro)}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="removerItem('produto', '${p.id}')" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
+        function deleteProduto(id) {
+          if (confirm("Tem certeza que deseja apagar este produto?")) {
+            delete AppState.produtos[id];
+            DataStore.save();
+            Renderer.updateAll();
+            Toast.show("Produto apagado com sucesso!", "success");
+          }
+        }
+
+        function createProduto() {
+          document.getElementById("modal-produto-title").textContent =
+            "Novo Produto";
+          document.getElementById("prod-id").value = "";
+          document.getElementById("form-produto").reset();
+          Modal.open("modal-produto");
+        }
+
+        function editProduto(id) {
+          const p = AppState.produtos[id];
+          if (!p) return;
+          document.getElementById("modal-produto-title").textContent =
+            "Editar Produto";
+          document.getElementById("prod-id").value = id;
+          document.getElementById("prod-nome").value = p.nome;
+          document.getElementById("prod-fio").value = p.fio;
+          document.getElementById("prod-tecelagem").value = p.tecelagem;
+          document.getElementById("prod-frete").value = p.frete;
+          document.getElementById("prod-lucro").value = p.lucro;
+          Modal.open("modal-produto");
+        }
+
+        function deleteCor(id) {
+          if (confirm("Tem certeza que deseja apagar esta cor?")) {
+            delete AppState.cores[id];
+            DataStore.save();
+            Renderer.updateAll();
+            Toast.show("Cor apagada com sucesso!", "success");
+          }
+        }
+
+        function createCor() {
+          document.getElementById("modal-cor-title").textContent = "Nova Cor";
+          document.getElementById("cor-id").value = "";
+          document.getElementById("form-cor").reset();
+          Modal.open("modal-cor");
+        }
+
+        function editCor(id) {
+          const c = AppState.cores[id];
+          if (!c) return;
+          document.getElementById("modal-cor-title").textContent = "Editar Cor";
+          document.getElementById("cor-id").value = id;
+          document.getElementById("cor-nome").value = c.nome;
+          document.getElementById("cor-tinturaria").value = c.tinturaria;
+          Modal.open("modal-cor");
+        }
+
+        // --- SUBMITS FOR MODALS ---
+        document
+          .getElementById("form-produto")
+          ?.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const id =
+              document.getElementById("prod-id").value || "p" + Date.now();
+            AppState.produtos[id] = {
+              nome: document.getElementById("prod-nome").value,
+              fio: parseFloat(document.getElementById("prod-fio").value) || 0,
+              tecelagem:
+                parseFloat(document.getElementById("prod-tecelagem").value) ||
+                0,
+              frete:
+                parseFloat(document.getElementById("prod-frete").value) || 0,
+              lucro:
+                parseFloat(document.getElementById("prod-lucro").value) || 0,
+            };
+            DataStore.save();
+            Renderer.updateAll();
+            Modal.close("modal-produto");
+            Toast.show("Produto salvo com sucesso!", "success");
+          });
+
+        document.getElementById("form-cor")?.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const id =
+            document.getElementById("cor-id").value || "c" + Date.now();
+          AppState.cores[id] = {
+            nome: document.getElementById("cor-nome").value,
+            tinturaria:
+              parseFloat(document.getElementById("cor-tinturaria").value) || 0,
+          };
+          DataStore.save();
+          Renderer.updateAll();
+          Modal.close("modal-cor");
+          Toast.show("Cor salva com sucesso!", "success");
+        });
+
+        document
+          .getElementById("btn-novo-produto")
+          ?.addEventListener("click", createProduto);
+        document
+          .getElementById("btn-nova-cor")
+          ?.addEventListener("click", createCor);
+
+        return {
+          init,
+          deletePedido,
+          deleteProduto,
+          createProduto,
+          editProduto,
+          deleteCor,
+          createCor,
+          editCor,
+        };
+      })();
+
+      // Export tools to window so that inline handlers work
+      window.Admin = Admin;
+
+      const ContatoForm = (() => {
+        function init() {
+          const form = document.getElementById("form-contato");
+          const btnTxt = document.getElementById("btn-contato-txt");
+          const btnEl = document.getElementById("btn-enviar-contato");
+          const success = document.getElementById("contato-success");
+
+          form?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const nomeInput = document.getElementById("contato-nome");
+            const emailInput = document.getElementById("contato-email");
+            const msgInput = document.getElementById("contato-msg");
+
+            const nome = nomeInput?.value?.trim() || "";
+            const email = emailInput?.value?.trim() || "";
+            const msg = msgInput?.value?.trim() || "";
+
+            if (
+              nome.length < 3 ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+              msg.length < 10
+            ) {
+              Toast.show(
+                "Preencha todos os campos corretamente antes de enviar.",
+                "warning",
+              );
+              return;
             }
 
-            const listaCores = document.getElementById('adm-lista-cores');
-            if (listaCores) {
-                listaCores.innerHTML = dbCores.map(c => `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 font-medium">
-                        <td class="p-3 font-bold text-gray-900">${c.nome}</td>
-                        <td class="p-3">${formatarBRL(c.tinturaria)}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="removerItem('cor', '${c.id}')" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+            if (btnTxt) btnTxt.textContent = "Enviando…";
+            if (btnEl) btnEl.disabled = true;
+
+            // Simula envio
+            await new Promise((r) => setTimeout(r, 1000));
+
+            form.reset();
+
+            if (success) success.classList.remove("hidden");
+            if (btnTxt) btnTxt.textContent = "Enviar Mensagem";
+            if (btnEl) btnEl.disabled = false;
+
+            Toast.show("Mensagem enviada com sucesso!", "success");
+            setTimeout(() => success?.classList.add("hidden"), 5000);
+          });
         }
 
-        function salvarDadosAtendimento() {
-            dbContatos.whatsapp = document.getElementById('adm-whats').value;
-            dbContatos.email = document.getElementById('adm-email').value;
-            salvarDadosNuvem();
-            atualizarTextosContatoPublicos();
-        }
+        return { init };
+      })();
 
-        function atualizarTextosContatoPublicos() {
-            const txtWhats = document.getElementById('contato-txt-whats');
-            const txtEmail = document.getElementById('contato-txt-email');
-            if(txtWhats) txtWhats.innerText = dbContatos.whatsapp || 'Não configurado';
-            if(txtEmail) txtEmail.innerText = dbContatos.email || 'Não configurado';
-        }
+      document.addEventListener("DOMContentLoaded", () => {
+        initDarkMode();
+        document.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-page]");
+          if (btn && !btn.closest("#mobile-drawer"))
+            Navigation.switchPage(btn.dataset.page);
+          if (e.target.closest(".btn-close-modal"))
+            Modal.close(e.target.closest(".pf-modal").id);
+        });
 
-        function removerItem(tipo, id) {
-            if (!confirm('Deseja realmente remover este insumo da tabela de cálculo?')) return;
-            
-            if (tipo === 'produto') {
-                dbProdutos = dbProdutos.filter(p => p.id !== id);
-            } else {
-                dbCores = dbCores.filter(c => c.id !== id);
-            }
-            salvarDadosNuvem();
-        }
+        document
+          .getElementById("sel-produto")
+          ?.addEventListener("change", Calculator.runAndRender);
+        document
+          .getElementById("sel-cor")
+          ?.addEventListener("change", Calculator.runAndRender);
+        document
+          .getElementById("sel-quantidade")
+          ?.addEventListener("change", Calculator.runAndRender);
 
-        function abrirModalProduto() {
-            const nome = prompt("Nome do Novo Artigo de Malha:");
-            if (!nome) return;
-            const fio = parseFloat(prompt("Custo do Fio por Kg (R$):")) || 0;
-            const tecelagem = parseFloat(prompt("Custo do Serviço de Tecelagem por Kg (R$):")) || 0;
-            const frete = parseFloat(prompt("Custo Logístico/Frete por Kg (R$):")) || 0;
-            const lucro = parseFloat(prompt("Margem de Lucro por Kg (R$):")) || 0;
+        document
+          .getElementById("btn-whatsapp")
+          ?.addEventListener("click", () =>
+            Calculator.dispatchLead("whatsapp"),
+          );
+        document
+          .getElementById("btn-email")
+          ?.addEventListener("click", () => Calculator.dispatchLead("email"));
 
-            dbProdutos.push({ id: 'p_' + Date.now(), nome, fio, tecelagem, frete, lucro });
-            salvarDadosNuvem();
-        }
-
-        function abrirModalCor() {
-            const nome = prompt("Nome do Acabamento de Cor:");
-            if (!nome) return;
-            const tinturaria = parseFloat(prompt("Preço do processo de Tinturaria por Kg (R$):")) || 0;
-
-            dbCores.push({ id: 'c_' + Date.now(), nome, tinturaria });
-            salvarDadosNuvem();
-        }
+        ContatoForm.init();
+        Admin.init();
+        DataStore.initSync();
+        if (AppState.isAdminLogado) Renderer.renderAdminPanel();
+      });
     </script>
-</body>
+  </body>
 </html>
