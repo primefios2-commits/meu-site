@@ -1995,7 +1995,7 @@
                   <p class="font-bold text-blue-300 mb-1 uppercase tracking-wide text-[10px]">Composição do Kg:</p>
                   <p>Fio: <span class="text-white">${formatBRLAux(p.fio)}</span>
                      &nbsp;|&nbsp; Tecel.: <span class="text-white">${formatBRLAux(p.tecelagem)}</span></p>
-                  <p>Tinturaria/Lucro: <span class="text-white">${formatBRLAux(parseFloat(c.tinturaria) + parseFloat(p.lucro))}</span>
+                  <p>Tinturaria: <span class="text-white">${formatBRLAux(parseFloat(c.tinturaria) + parseFloat(p.lucro))}</span>
                      &nbsp;|&nbsp; Frete: <span class="text-white">${formatBRLAux(p.frete)}</span></p>
                   ${piqLine}
               `;
@@ -2061,8 +2061,8 @@
 *Cor Escolhida:* ${color}
 
 *VALORES DO ORÇAMENTO:*
-• Preço por kg: ${pKgStr}
-• *VALOR TOTAL:* ${totalStr}
+• *Preço por kg:* ${pKgStr}
+• VALOR TOTAL: ${totalStr}
 
 *CONDIÇÕES DE PAGAMENTO:*
 • *Passo 1 (Sinal):* ${sinalStr}
@@ -2071,8 +2071,8 @@
   _(Após terminar toda a produção da malha)_
 
 --------------------------------------------------
-_Atenção: Prazo médio de fabricação de 25 a 45 dias._
-_Sujeito a variação de quebra (percas) de 6% a 8%._`;
+_*Atenção: Prazo médio de fabricação de 25 a 45 dias*._
+_*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
 
           // Open WhatsApp/Email url
           let phone = AppState.contatos.whatsapp.replace(/\D/g, "");
