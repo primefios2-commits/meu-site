@@ -2437,30 +2437,30 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             }
           });
         }
-               if (confirm("Tem certeza que deseja apagar este pedido?")) {
 
-            delete AppState.pedidos[id];
+        async function deletePedido(id) {
+  if (confirm("Tem certeza que deseja apagar este pedido?")) {
+    try {
+      await pedidosRef.child(id).remove();
 
-            DataStore.save();
+      Renderer.renderAdminPanel();
+      Toast.show("Pedido apagado com sucesso!", "success");
+    } catch (error) {
+      console.error(error);
+      Toast.show("Erro ao apagar pedido!", "error");
+    }
+  }
+async function deleteProduto(id) {
+  if (confirm("Tem certeza que deseja apagar este produto?")) {
+    delete AppState.produtos[id];
 
-            Renderer.renderAdminPanel();
+    await DataStore.save();
 
-            Toast.show("Pedido apagado com sucesso!", "success");
-
-          }
-
-        }
-
-
-        function deleteProduto(id) {
-
-          if (confirm("Tem certeza que deseja apagar este produto?")) {
-            delete AppState.produtos[id];
-            DataStore.save();
-            Renderer.updateAll();
-            Toast.show("Produto apagado com sucesso!", "success");
-          }
-        } 
+    Renderer.updateAll();
+    Toast.show("Produto apagado com sucesso!", "success");
+  }
+}
+                      
         function createProduto() {
           document.getElementById("modal-produto-title").textContent =
             "Novo Produto";
