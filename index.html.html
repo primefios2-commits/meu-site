@@ -2437,11 +2437,11 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             }
           });
         }
-
-        function deletePedido(id) {
+function deletePedido(id) {
   if (confirm("Tem certeza que deseja apagar este pedido?")) {
-    // Remove diretamente do nó de pedidos do Firebase
-    pedidosRef.child(id).remove()
+    
+    // ATENÇÃO: Verifique se o nome do seu nó no Firebase é 'pedidosPrimeFios' ou apenas 'pedidos'
+    firebase.database().ref('pedidosPrimeFios').child(id).remove()
       .then(() => {
         Toast.show("Pedido apagado com sucesso!", "success");
       })
@@ -2449,8 +2449,10 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
         Toast.show("Erro ao apagar no banco de dados.", "error");
         console.error(err);
       });
+      
   }
 }
+
         function createProduto() {
           document.getElementById("modal-produto-title").textContent =
             "Novo Produto";
