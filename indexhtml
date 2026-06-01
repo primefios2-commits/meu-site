@@ -26,12 +26,16 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+    <!-- Libs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <!-- ============================================================
          TAILWIND CONFIG
     ============================================================ -->
     <script>
       tailwind.config = {
-        darkMode: "class", // Item 7: Enable class-based dark mode
+        darkMode: "class",
         theme: {
           extend: {
             colors: {
@@ -304,7 +308,6 @@
         display: block;
       }
 
-      /* ── Item 4: Banner de erro de conexão ── */
       #banner-db-error {
         display: none;
         position: fixed;
@@ -329,7 +332,6 @@
         gap: 8px;
       }
 
-      /* ── Item 7: Select de status coloridos ── */
       .status-select {
         border-radius: 8px;
         font-size: 0.72rem;
@@ -356,7 +358,6 @@
         color: #15803d;
       }
 
-      /* ── Item 7: Extra CSS para Dark Mode ── */
       .dark body,
       .dark .bg-slate-50 {
         background-color: #111827;
@@ -516,9 +517,6 @@
       </nav>
     </aside>
 
-    <!-- ─────────────────────────────────────────────
-     HEADER / NAVBAR
-───────────────────────────────────────────── -->
     <header
       class="bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm sticky top-0 z-30"
     >
@@ -572,7 +570,6 @@
         </nav>
 
         <div class="flex items-center gap-3">
-          <!-- ★ ITEM 7: Dark Mode Toggle ★ -->
           <button
             id="btn-toggle-dark"
             class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
@@ -602,13 +599,7 @@
       </div>
     </header>
 
-    <!-- ─────────────────────────────────────────────
-     MAIN CONTENT
-───────────────────────────────────────────── -->
     <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <!-- ══════════════════════════════════════════
-         PÁGINA 1 — HOME / QUEM SOMOS
-    ══════════════════════════════════════════ -->
       <section id="page-home" class="pf-section is-active space-y-14">
         <div
           class="relative overflow-hidden bg-primary rounded-3xl text-white px-8 py-16 md:py-20 hero-diagonal"
@@ -784,9 +775,6 @@
         </div>
       </section>
 
-      <!-- ══════════════════════════════════════════
-         PÁGINA 2 — PRÉ-ORÇAMENTO (SIMULADOR)
-    ══════════════════════════════════════════ -->
       <section
         id="page-orcamento"
         class="pf-section grid-layout lg:grid-cols-3 gap-8"
@@ -805,7 +793,6 @@
             </p>
           </div>
 
-          <!-- Loading skeleton -->
           <div id="skeleton-orcamento" class="p-7 space-y-5">
             <div class="grid md:grid-cols-2 gap-5">
               <div class="space-y-2">
@@ -823,9 +810,7 @@
             </div>
           </div>
 
-          <!-- Actual form -->
           <div id="form-orcamento" class="p-7 space-y-5 hidden">
-            <!-- Dados do Cliente -->
             <div
               class="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3"
             >
@@ -866,7 +851,6 @@
             </div>
 
             <div class="grid md:grid-cols-2 gap-5">
-              <!-- Produto -->
               <div class="space-y-1.5">
                 <label
                   for="sel-produto"
@@ -879,7 +863,6 @@
                 ></select>
               </div>
 
-              <!-- Cor -->
               <div class="space-y-1.5">
                 <label
                   for="sel-cor"
@@ -893,7 +876,6 @@
               </div>
             </div>
 
-            <!-- Quantidade -->
             <div class="space-y-1.5">
               <label
                 for="sel-quantidade"
@@ -912,7 +894,6 @@
               </select>
             </div>
 
-            <!-- Observações -->
             <div class="space-y-1.5">
               <label
                 for="obs-pedido"
@@ -955,7 +936,6 @@
           </div>
         </div>
 
-        <!-- Results panel -->
         <div
           id="painel-resultados"
           class="bg-primary text-white rounded-3xl shadow-xl relative overflow-hidden flex flex-col transition-all duration-300"
@@ -1038,14 +1018,17 @@
               >
                 <i class="fa-solid fa-envelope"></i> Formalizar por E-mail
               </button>
+              <button
+                id="btn-download-pdf"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all"
+              >
+                <i class="fa-solid fa-file-pdf text-red-500"></i> Baixar PDF do Orçamento
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ══════════════════════════════════════════
-         PÁGINA 3 — CONTATO
-    ══════════════════════════════════════════ -->
       <section id="page-contato" class="pf-section max-w-5xl mx-auto">
         <div class="text-center mb-10 space-y-2">
           <h2 class="font-display text-4xl font-black text-primary">
@@ -1153,9 +1136,6 @@
         </div>
       </section>
 
-      <!-- ══════════════════════════════════════════
-         PÁGINA 4 — PAINEL ADMIN
-    ══════════════════════════════════════════ -->
       <section id="page-admin" class="pf-section space-y-8">
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5"
@@ -1183,23 +1163,132 @@
 
         <div class="flex gap-2 border-b border-gray-200 pb-0 flex-wrap">
           <button
-            id="tab-btn-config"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-primary text-primary bg-white"
-            data-tab="config"
+            id="tab-btn-dash"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
+            data-tab="dash"
           >
-            Configurações
+            <i class="fa-solid fa-chart-pie"></i> Analytics
           </button>
           <button
             id="tab-btn-producao"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-primary text-primary bg-white flex items-center gap-2"
             data-tab="producao"
           >
-            Controle de Produção
+            <i class="fa-solid fa-list-check"></i> Controle de Produção
+          </button>
+          <button
+            id="tab-btn-kanban"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
+            data-tab="kanban"
+          >
+            <i class="fa-brands fa-trello"></i> Quadro Kanban
+          </button>
+          <button
+            id="tab-btn-config"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
+            data-tab="config"
+          >
+            <i class="fa-solid fa-gear"></i> Configurações
+          </button>
+          <button
+            id="tab-btn-audit"
+            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
+            data-tab="audit"
+          >
+            <i class="fa-solid fa-clock-rotate-left"></i> Histórico
           </button>
         </div>
 
-        <!-- ABA CONFIGURAÇÕES -->
-        <div id="admin-tab-config" class="admin-tab-panel space-y-8">
+        <div id="admin-tab-dash" class="admin-tab-panel hidden space-y-6">
+           <div class="flex items-center justify-between pb-4">
+              <h3 class="font-display text-2xl font-black text-gray-900">Dashboard & Analytics</h3>
+           </div>
+           
+           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
+                 <h4 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Faturamento do Mês</h4>
+                 <div class="text-3xl font-black text-gray-900" id="dash-faturamento">R$ 0,00</div>
+              </div>
+              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
+                 <h4 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Top Produto (kg)</h4>
+                 <div class="text-2xl font-black text-primary" id="dash-top-produto">-</div>
+              </div>
+              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
+                 <h4 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Tempo Médio Produção</h4>
+                 <div class="text-3xl font-black text-green-600" id="dash-tempo-medio">0 Dias</div>
+              </div>
+           </div>
+           
+           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
+                 <h4 class="text-sm font-bold text-gray-800 mb-6 font-display">Pedidos por Status</h4>
+                 <canvas id="chart-status" class="w-full" style="max-height:300px;"></canvas>
+              </div>
+              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
+                 <h4 class="text-sm font-bold text-gray-800 mb-6 font-display">Tendência de Vendas (Últimos dias)</h4>
+                 <canvas id="chart-vendas" class="w-full" style="max-height:300px;"></canvas>
+              </div>
+           </div>
+        </div>
+
+        <div id="admin-tab-kanban" class="admin-tab-panel hidden h-[75vh]">
+           <div class="flex items-center justify-between pb-4">
+              <h3 class="font-display text-2xl font-black text-gray-900">Quadro Kanban</h3>
+              <div class="text-xs text-gray-500 font-medium">Arraste os cards para atualizar o status</div>
+           </div>
+           
+           <div class="flex gap-4 overflow-x-auto h-full pb-4 items-start" id="kanban-board">
+              <!-- Columns Biulded Dynamic -->
+              <div class="flex flex-col flex-none w-[300px] h-full">
+                 <div class="bg-gray-100 border border-gray-200 rounded-t-xl p-3 font-bold text-gray-700 text-sm flex justify-between">
+                    Em Fabricação <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-md text-[10px]" id="kb-count-em-fabricacao">0</span>
+                 </div>
+                 <div class="bg-gray-50 border border-t-0 p-2 border-gray-200 rounded-b-xl flex-1 overflow-y-auto space-y-2 kanban-column" data-status="Em Fabricação" id="kb-col-em-fabricacao">
+                 </div>
+              </div>
+              
+              <div class="flex flex-col flex-none w-[300px] h-full">
+                 <div class="bg-yellow-50 border border-yellow-200 rounded-t-xl p-3 font-bold text-yellow-800 text-sm flex justify-between">
+                    Pronto <span class="bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-md text-[10px]" id="kb-count-pronto">0</span>
+                 </div>
+                 <div class="bg-yellow-50/50 border border-t-0 p-2 border-yellow-200 rounded-b-xl flex-1 overflow-y-auto space-y-2 kanban-column" data-status="Pronto" id="kb-col-pronto">
+                 </div>
+              </div>
+              
+              <div class="flex flex-col flex-none w-[300px] h-full">
+                 <div class="bg-green-50 border border-green-200 rounded-t-xl p-3 font-bold text-green-800 text-sm flex justify-between">
+                    Entregue <span class="bg-green-200 text-green-800 px-2 py-0.5 rounded-md text-[10px]" id="kb-count-entregue">0</span>
+                 </div>
+                 <div class="bg-green-50/50 border border-t-0 p-2 border-green-200 rounded-b-xl flex-1 overflow-y-auto space-y-2 kanban-column" data-status="Entregue" id="kb-col-entregue">
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        <div id="admin-tab-audit" class="admin-tab-panel hidden space-y-6">
+           <div class="flex items-center justify-between pb-4">
+              <h3 class="font-display text-2xl font-black text-gray-900">Histórico de Ações (Audit Trail)</h3>
+           </div>
+           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+             <div class="overflow-x-auto max-h-[60vh]">
+               <table class="w-full text-left text-xs min-w-[700px]">
+                 <thead class="sticky top-0 bg-white">
+                   <tr class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200">
+                     <th class="px-5 py-3 w-40">Data/Hora</th>
+                     <th class="px-5 py-3 w-48">Usuário</th>
+                     <th class="px-5 py-3 w-48">Ação</th>
+                     <th class="px-5 py-3">Detalhes</th>
+                   </tr>
+                 </thead>
+                 <tbody id="adm-lista-audit">
+                    <tr><td colspan="4" class="p-6 text-center text-gray-400">Carregando histórico...</td></tr>
+                 </tbody>
+               </table>
+             </div>
+           </div>
+        </div>
+
+        <div id="admin-tab-config" class="admin-tab-panel hidden space-y-8">
           <div class="grid lg:grid-cols-3 gap-8">
             <div class="space-y-6">
               <div
@@ -1257,7 +1346,6 @@
                 </form>
               </div>
 
-              <!-- ★ ITEM 4: Integração Sheets ★ -->
               <div
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
               >
@@ -1272,20 +1360,29 @@
                     type="url"
                     id="adm-url-sheets"
                     class="pf-input text-sm"
-                    placeholder="URL Apps Script"
+                    placeholder="URL API (Apps Script)"
                   />
+                  <div class="space-y-3 pt-1">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
+                      <input type="checkbox" id="adm-sheet-lead" class="w-4 h-4 text-primary rounded border-gray-300" />
+                      Auto-exportar orçamentos
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
+                      <input type="checkbox" id="adm-sheet-status" class="w-4 h-4 text-primary rounded border-gray-300" />
+                      Auto-exportar mudança de status
+                    </label>
+                  </div>
                   <button
                     type="submit"
                     class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
                   >
-                    Salvar URL Sheets
+                    Salvar Configurações Sheets
                   </button>
                 </form>
               </div>
             </div>
 
             <div class="lg:col-span-2 space-y-8">
-              <!-- Tabela de Produtos -->
               <div
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
               >
@@ -1321,7 +1418,6 @@
                 </div>
               </div>
 
-              <!-- Tabela de Cores -->
               <div
                 class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
               >
@@ -1357,8 +1453,7 @@
           </div>
         </div>
 
-        <!-- ABA PRODUÇÃO (★ Itens 2, 4, 5, 6, 8) -->
-        <div id="admin-tab-producao" class="admin-tab-panel hidden space-y-6">
+        <div id="admin-tab-producao" class="admin-tab-panel space-y-6">
           <div
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
@@ -1386,7 +1481,6 @@
             </div>
           </div>
 
-          <!-- ★ ITEM 6: Contadores de Status -->
           <div class="grid grid-cols-3 gap-4">
             <div
               class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center"
@@ -1435,18 +1529,47 @@
             </div>
           </div>
 
-          <!-- ★ ITEM 2: Busca na Produção -->
-          <div>
-            <input
-              type="text"
-              id="search-production"
-              placeholder="Buscar por cliente ou produto..."
-              class="pf-input"
-              style="max-width: 400px"
-            />
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar</label>
+                <input type="text" id="filter-search" placeholder="Cliente ou Produto..." class="pf-input text-xs py-2 dark:border-gray-700" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status Final</label>
+                <select id="filter-status" class="pf-input text-xs py-2 cursor-pointer dark:border-gray-700">
+                    <option value="">Todos</option>
+                    <option value="Em Fabricação">Em Fabricação</option>
+                    <option value="Pronto">Pronto</option>
+                    <option value="Entregue">Entregue</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data Início</label>
+                <input type="date" id="filter-date-start" class="pf-input text-xs py-2 dark:border-gray-700" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data Fim</label>
+                <input type="date" id="filter-date-end" class="pf-input text-xs py-2 dark:border-gray-700" />
+              </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Classificar por:</span>
+                  <select id="filter-sort" class="pf-input text-xs py-1.5 px-2 w-auto bg-gray-50 cursor-pointer border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-semibold">
+                    <option value="date-desc">Data (Mais Novas)</option>
+                    <option value="date-asc">Data (Mais Antigas)</option>
+                    <option value="val-desc">Valor (Maior para Menor)</option>
+                    <option value="val-asc">Valor (Menor para Maior)</option>
+                  </select>
+              </div>
+              <div class="flex items-center gap-2">
+                  <button id="btn-clear-filters" class="text-xs font-bold text-gray-500 hover:text-primary transition-colors px-3 py-1">Limpar Filtros</button>
+              </div>
+            </div>
           </div>
 
-          <!-- Tabela de Produção -->
           <div
             class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
           >
@@ -1484,6 +1607,17 @@
                 </thead>
                 <tbody id="producao-lista-pedidos"></tbody>
               </table>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 dark:bg-gray-800/30 px-5 py-3 border-t border-gray-100 dark:border-gray-800 gap-3">
+               <div class="text-[11px] text-gray-500 font-semibold tracking-wider uppercase">
+                  Exibindo <span id="pag-show" class="text-gray-900 dark:text-gray-100 font-bold">0</span> de <span id="pag-total" class="text-gray-900 dark:text-gray-100 font-bold">0</span> pedidos
+               </div>
+               <div class="flex gap-1" id="pag-controls">
+                  <button id="btn-pag-prev" class="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-md text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">Anterior</button>
+                  <div id="pag-numbers" class="flex gap-1 items-center mx-1"></div>
+                  <button id="btn-pag-next" class="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-md text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">Próxima</button>
+               </div>
             </div>
           </div>
         </div>
@@ -1559,7 +1693,6 @@
       </div>
     </footer>
 
-    <!-- Flutuante Whatsapp -->
     <a
       href="#"
       id="floating-whatsapp"
@@ -1569,7 +1702,6 @@
       <i class="fa-brands fa-whatsapp"></i>
     </a>
 
-    <!-- Modais -->
     <div
       id="modal-login"
       class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm p-4"
@@ -1586,18 +1718,19 @@
             id="input-senha"
             class="pf-input text-center font-bold text-lg"
             placeholder="••••••••••"
+            required
           />
           <div class="flex gap-3 pt-1">
             <button
               type="button"
-              class="btn-close-modal w-1/2 bg-gray-100 py-3 rounded-xl font-bold"
+              class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 py-3 rounded-xl font-bold transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               id="btn-submit-login"
-              class="w-1/2 bg-primary text-white py-3 rounded-xl font-bold"
+              class="w-1/2 bg-primary hover:bg-black text-white py-3 rounded-xl font-bold transition-all"
             >
               Acessar
             </button>
@@ -1759,8 +1892,29 @@
       </div>
     </div>
 
+    <div
+      id="modal-confirm"
+      class="pf-modal flex fixed inset-0 bg-black/60 z-[100] items-center justify-center backdrop-blur-sm p-4"
+    >
+      <div class="modal-card bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-sm w-full">
+        <div class="text-center mb-6">
+          <h3 class="font-display text-2xl font-black text-gray-900 dark:text-gray-100">
+            Atenção
+          </h3>
+          <p class="text-gray-600 dark:text-gray-400 mt-2 font-medium" id="modal-confirm-msg">Tem certeza que deseja apagar?</p>
+        </div>
+        <div class="flex gap-3 pt-3">
+          <button type="button" class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 py-3 rounded-xl font-bold dark:text-gray-300">
+            Cancelar
+          </button>
+          <button type="button" id="btn-confirm-action" class="w-1/2 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-all">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script>
-      // Firebase Config
       const firebaseConfig = {
         apiKey: "AIzaSyC77VdzqV7ej9stsdLWZnn0ssfpVLLLpCY",
         authDomain: "prime-fios.firebaseapp.com",
@@ -1776,8 +1930,23 @@
       const db = firebase.database();
       const dbRef = db.ref("dadosPrimeFios");
       const pedidosRef = db.ref("pedidosPrimeFios");
+      const auditRef = db.ref("auditPrimeFios");
 
-      // Utilitários globais
+      const Logger = {
+        async log(action, details) {
+          try {
+            await auditRef.push({
+               action,
+               details,
+               user: 'Sistema/Admin',
+               timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+          } catch(e) {
+            console.error("Audit log failed", e);
+          }
+        }
+      };
+
       const formatBRL = (val) =>
         Number(val || 0).toLocaleString("pt-BR", {
           style: "currency",
@@ -1799,14 +1968,15 @@
         }
       });
 
-      // ★ ITEM 3: FLAG DE MUDANÇAS NÃO SALVAS (hasUnsavedChanges)
       const AppState = {
         produtos: {},
         cores: {},
         contatos: { whatsapp: "", email: "" },
         custoPiquet: 0,
         senha: "Mortadela123",
-        urlSheets: "", // ★ ITEM 4
+        urlSheets: "",
+        sheetAutoLead: true,
+        sheetAutoStatus: true,
         hasUnsavedChanges: false,
         dbReady: false,
         pedidos: {},
@@ -1820,7 +1990,6 @@
         currentPage: "home",
       };
 
-      // ★ ITEM 7: DARK MODE TOGGLE
       function initDarkMode() {
         const isDark = localStorage.getItem("theme") === "dark";
         if (isDark) document.documentElement.classList.add("dark");
@@ -1867,6 +2036,23 @@
         return { open, close };
       })();
 
+      const CustomConfirm = (() => {
+        let confirmAction = null;
+        function show(msg, action) {
+          const msgEl = document.getElementById('modal-confirm-msg');
+          if (msgEl) msgEl.textContent = msg;
+          confirmAction = action;
+          Modal.open('modal-confirm');
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+          document.getElementById('btn-confirm-action')?.addEventListener('click', () => {
+            if (confirmAction) confirmAction();
+            Modal.close('modal-confirm');
+          });
+        });
+        return { show };
+      })();
+
       const Navigation = {
         switchPage(target) {
           if (target === "admin" && !AppState.isAdminLogado)
@@ -1877,7 +2063,11 @@
           });
           document.getElementById(`page-${target}`)?.classList.add("is-active");
           AppState.currentPage = target;
-          if (target === "admin") Renderer.renderAdminPanel();
+          if (target === "admin") {
+            Renderer.renderAdminPanel();
+            Renderer.renderAnalytics();
+            Renderer.renderKanban();
+          }
         },
       };
 
@@ -1896,7 +2086,6 @@
               .getElementById("banner-db-error")
               ?.classList.remove("show");
 
-            // ★ ITEM 8: INDICADOR DE ÚLTIMO SYNC
             const syncEl = document.getElementById("param-sync-indic");
             if (syncEl)
               syncEl.textContent =
@@ -1909,29 +2098,38 @@
               AppState.contatos = data.contatos || {};
               AppState.custoPiquet = parseFloat(data.custoPiquet) || 0;
               AppState.senha = data.senha || "Mortadela123";
-              AppState.urlSheets = data.urlSheets || ""; // ITEM 4
+              AppState.urlSheets = data.urlSheets || "";
+              AppState.sheetAutoLead = data.sheetAutoLead !== false;
+              AppState.sheetAutoStatus = data.sheetAutoStatus !== false;
               Renderer.updateAll();
             }
           });
 
           pedidosRef.on("value", (snapshot) => {
             AppState.pedidos = snapshot.val() || {};
-            if (AppState.isAdminLogado) Renderer.renderProducaoTable();
+            if (AppState.isAdminLogado) {
+               Renderer.renderProducaoTable();
+               Renderer.renderAnalytics();
+               Renderer.renderKanban();
+            }
           });
         }
 
-        async function save() {
+        async function save(origem = "Admin") {
           try {
             await dbRef.update({
-              produtos: AppState.produtos,
-              cores: AppState.cores,
-              contatos: AppState.contatos,
-              custoPiquet: AppState.custoPiquet,
-              senha: AppState.senha,
-              urlSheets: AppState.urlSheets,
+              produtos: (AppState.produtos && Object.keys(AppState.produtos).length > 0) ? AppState.produtos : null,
+              cores: (AppState.cores && Object.keys(AppState.cores).length > 0) ? AppState.cores : null,
+              contatos: AppState.contatos || null,
+              custoPiquet: AppState.custoPiquet || 0,
+              senha: AppState.senha || "Mortadela123",
+              urlSheets: AppState.urlSheets || "",
+              sheetAutoLead: AppState.sheetAutoLead,
+              sheetAutoStatus: AppState.sheetAutoStatus,
             });
-            AppState.hasUnsavedChanges = false; // ITEM 3 reseta flag
+            AppState.hasUnsavedChanges = false;
             Toast.show("Alterações salvas com sucesso!", "success");
+            Logger.log("Configurações Salvas", `Nova config salva via ${origem}`);
           } catch (err) {
             Toast.show("Erro ao salvar.", "error");
           }
@@ -1939,6 +2137,7 @@
 
         async function updatePedidoStatus(pedidoId, campo, valor) {
           await pedidosRef.child(pedidoId).update({ [campo]: valor });
+          Logger.log("Atualizou Status", `Pedido ${pedidoId} - Campo ${campo} - Novo Valor: ${valor}`);
         }
         return { initSync, save, updatePedidoStatus };
       })();
@@ -2003,7 +2202,80 @@
             if (panel) {
               panel.classList.remove("opacity-50", "scale-[0.98]");
             }
-          }, 350); // delay suave
+          }, 350);
+        }
+
+        async function downloadPDF() {
+          const selProd = document.getElementById("sel-produto");
+          const selCor = document.getElementById("sel-cor");
+          const qtd = document.getElementById("sel-quantidade")?.value;
+          const prazoHTML = document.getElementById("res-prazo")?.textContent;
+          const valorHTML = document.getElementById("res-total")?.textContent;
+          const breakdown = document.getElementById("res-breakdown")?.innerText;
+
+          if (!selProd.value || !selCor.value || !qtd)
+            return Toast.show("Orçamento incompleto", "warning");
+
+          const pNode = selProd.options[selProd.selectedIndex].text;
+          const cNode = selCor.options[selCor.selectedIndex].text;
+
+          // Build a temporary container
+          const div = document.createElement('div');
+          div.style.padding = '40px';
+          div.style.background = '#ffffff';
+          div.style.color = '#000000';
+          div.style.fontFamily = 'Arial, sans-serif';
+          div.innerHTML = `
+             <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+                <h1 style="margin:0; font-size: 24px; font-weight: bold; color: #1e3a8a;">Prime Fios</h1>
+                <p style="margin:5px 0 0 0; color: #6b7280; font-size: 12px;">Orçamento Oficial - ${new Date().toLocaleDateString('pt-BR')}</p>
+             </div>
+             
+             <div style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #1e3a8a;">Detalhes da Simulação</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Produto:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${pNode}</td></tr>
+                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Tonalidade:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cNode}</td></tr>
+                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Quantidade:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${qtd} kg</td></tr>
+                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Prazo Estimado:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${prazoHTML}</td></tr>
+                </table>
+             </div>
+             
+             <div style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 10px; font-size: 16px; color: #1e3a8a;">Detalhamento de Custos</h3>
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; white-space: pre-wrap;">
+${breakdown}
+                </div>
+             </div>
+             
+             <div style="text-align: right; margin-top: 20px;">
+                <p style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Valor Total Estimado</p>
+                <div style="font-size: 28px; font-weight: bold; color: #10b981;">${valorHTML}</div>
+             </div>
+             
+             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center;">
+                <p>Validade da proposta: 7 dias corridos.</p>
+                <p>O prazo de entrega começa a contar a partir da confirmação do sinal.</p>
+             </div>
+          `;
+          
+          Toast.show("Gerando PDF, aguarde...", "info");
+          
+          const opt = {
+             margin:       10,
+             filename:     `Orcamento_${pNode.substring(0, 10)}_${new Date().getTime()}.pdf`,
+             image:        { type: 'jpeg', quality: 0.98 },
+             html2canvas:  { scale: 2 },
+             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+          
+          try {
+             await html2pdf().set(opt).from(div).save();
+             Toast.show("Download concluído!", "success");
+          } catch(e) {
+             console.error(e);
+             Toast.show("Erro ao gerar PDF.", "error");
+          }
         }
 
         function dispatchLead(channel) {
@@ -2029,9 +2301,8 @@
           if (!selProd?.value || !selCor?.value)
             return Toast.show("Preencha os campos", "warning");
 
-          // ★ ITEM 1 e 5: AUTO-REGISTRO NO BANDO DE DADOS (Push assíncrono para Tabela Produção)
           const prazoE = new Date();
-          prazoE.setDate(prazoE.getDate() + 35); // 35 dias default
+          prazoE.setDate(prazoE.getDate() + 35);
 
           pedidosRef
             .push({
@@ -2048,8 +2319,26 @@
               statusLogistica: "Aguardando Coleta",
               statusFinal: "Em Fabricação",
             })
-            .then(() => {
+            .then((docRef) => {
               Toast.show("Pedido auto-registrado na produção!", "success");
+              if (AppState.urlSheets && AppState.sheetAutoLead) {
+                const payload = {
+                  action: "NEW_LEAD",
+                  id: docRef.key,
+                  clienteNome: clienteNome || "Novo Lead",
+                  clienteWhats: clienteWhats || "",
+                  produto: product + " / " + color,
+                  quantidade: qtd,
+                  valorTotal: totalStr,
+                  data: new Date().toISOString()
+                };
+                fetch(AppState.urlSheets, {
+                  method: "POST",
+                  mode: "no-cors",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                }).catch(err => console.error(err));
+              }
             })
             .catch((err) => console.error(err));
 
@@ -2073,7 +2362,6 @@
 _*Atenção: Prazo médio de fabricação de 25 a 45 dias*._
 _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
 
-          // Open WhatsApp/Email url
           let phone = AppState.contatos.whatsapp.replace(/\D/g, "");
           if (channel === "whatsapp") {
             window.open(
@@ -2089,13 +2377,12 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             );
           }
 
-          // Limpar lead
           const elNome = document.getElementById("input-cliente-nome");
           if (elNome) elNome.value = "";
           const elWhats = document.getElementById("input-cliente-whats");
           if (elWhats) elWhats.value = "";
         }
-        return { runAndRender, dispatchLead };
+        return { runAndRender, dispatchLead, downloadPDF };
       })();
 
       const Renderer = (() => {
@@ -2154,7 +2441,11 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
               ?.classList.remove("hidden");
           }
 
-          if (AppState.isAdminLogado) renderAdminPanel();
+          if (AppState.isAdminLogado) {
+             renderAdminPanel();
+             renderAnalytics();
+             renderKanban();
+          }
         }
 
         function renderAdminPanel() {
@@ -2165,9 +2456,10 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
           document.getElementById("adm-custo-piquet").value =
             AppState.custoPiquet || 0;
           document.getElementById("adm-url-sheets").value =
-            AppState.urlSheets || ""; // ITEM 4
+            AppState.urlSheets || "";
+          document.getElementById("adm-sheet-lead").checked = AppState.sheetAutoLead;
+          document.getElementById("adm-sheet-status").checked = AppState.sheetAutoStatus;
 
-          // Render tabelas config completas
           document.getElementById("adm-lista-produtos").innerHTML =
             Object.entries(AppState.produtos)
               .map(
@@ -2207,24 +2499,92 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
           renderProducaoTable();
         }
 
-        // ★ ITEM 5 e 6: COLUNA PRAZO (DIAS) E CONTADORES
+        let filterState = { search: "", status: "", dateStart: "", dateEnd: "", sort: "date-desc", page: 1, limit: 15 };
+
+        function initFilters() {
+            const bind = (id, ev, cb) => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener(ev, cb);
+            };
+            
+            bind('filter-search', 'input', e => { filterState.search = e.target.value.toLowerCase(); filterState.page = 1; renderProducaoTable(); });
+            bind('filter-status', 'change', e => { filterState.status = e.target.value; filterState.page = 1; renderProducaoTable(); });
+            bind('filter-date-start', 'change', e => { filterState.dateStart = e.target.value; filterState.page = 1; renderProducaoTable(); });
+            bind('filter-date-end', 'change', e => { filterState.dateEnd = e.target.value; filterState.page = 1; renderProducaoTable(); });
+            bind('filter-sort', 'change', e => { filterState.sort = e.target.value; filterState.page = 1; renderProducaoTable(); });
+            
+            bind('btn-clear-filters', 'click', () => {
+               const ids = ['filter-search', 'filter-status', 'filter-date-start', 'filter-date-end'];
+               ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ""; });
+               if(document.getElementById('filter-sort')) document.getElementById('filter-sort').value = "date-desc";
+               filterState = { search: "", status: "", dateStart: "", dateEnd: "", sort: "date-desc", page: 1, limit: 15 };
+               renderProducaoTable();
+            });
+            
+            bind('btn-pag-prev', 'click', () => { if(filterState.page > 1) { filterState.page--; renderProducaoTable(); } });
+            bind('btn-pag-next', 'click', () => { filterState.page++; renderProducaoTable(); });
+        }
+
         function renderProducaoTable() {
           const tbody = document.getElementById("producao-lista-pedidos");
           if (!tbody) return;
-          const entries = Object.entries(AppState.pedidos);
+          let entries = Object.entries(AppState.pedidos);
 
-          let fabCount = 0,
-            prontoCount = 0,
-            entrCount = 0;
-
-          tbody.innerHTML = entries
-            .map(([id, pedido]) => {
-              // ITEM 6: Counters
+          let fabCount = 0, prontoCount = 0, entrCount = 0;
+          entries.forEach(([id, pedido]) => {
               if (pedido.statusFinal === "Em Fabricação") fabCount++;
               else if (pedido.statusFinal === "Pronto") prontoCount++;
               else if (pedido.statusFinal === "Entregue") entrCount++;
+          });
 
-              // Selects setup
+          if(filterState.status) {
+              entries = entries.filter(([id, p]) => p.statusFinal === filterState.status);
+          }
+          if(filterState.search) {
+              entries = entries.filter(([id, p]) => 
+                  (p.clienteNome && p.clienteNome.toLowerCase().includes(filterState.search)) || 
+                  (p.produto && p.produto.toLowerCase().includes(filterState.search)) ||
+                  id.toLowerCase().includes(filterState.search)
+              );
+          }
+          if(filterState.dateStart) {
+              const ds = new Date(filterState.dateStart).getTime();
+              entries = entries.filter(([id, p]) => new Date(p.data).getTime() >= ds);
+          }
+          if(filterState.dateEnd) {
+              const de = new Date(filterState.dateEnd).getTime();
+              // Adiciona 1 dia para incluir toda a data fim até as 23:59
+              entries = entries.filter(([id, p]) => new Date(p.data).getTime() <= de + 86400000);
+          }
+
+          entries.sort((a, b) => {
+              // Converte string BRL 'R$ 1.200,00' para float 1200.00
+              const parseVal = (str) => {
+                 if(!str) return 0;
+                 return parseFloat(str.replace(/[R$\s\.]/g, '').replace(',', '.'));
+              };
+              const vA = parseVal(a[1].valorTotal);
+              const vB = parseVal(b[1].valorTotal);
+              const dA = new Date(a[1].data).getTime();
+              const dB = new Date(b[1].data).getTime();
+              
+              if(filterState.sort === 'val-desc') return vB - vA;
+              if(filterState.sort === 'val-asc') return vA - vB;
+              if(filterState.sort === 'date-asc') return dA - dB;
+              return dB - dA;
+          });
+
+          const total = entries.length;
+          const totalPages = Math.ceil(total / filterState.limit) || 1;
+          if (filterState.page > totalPages) filterState.page = totalPages;
+          if (filterState.page < 1) filterState.page = 1;
+          
+          const start = (filterState.page - 1) * filterState.limit;
+          const end = start + filterState.limit;
+          const paged = entries.slice(start, end);
+
+          tbody.innerHTML = paged
+            .map(([id, pedido]) => {
               const selects = [
                 { c: "statusFio", o: ["A Comprar", "Comprado", "Em Estoque"] },
                 {
@@ -2256,7 +2616,6 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
                 })
                 .join("");
 
-              // ITEM 5: Calculo de Badges de prazo
               let htmlPrazo = "-";
               if (pedido.prazoEntrega) {
                 const diff =
@@ -2271,26 +2630,29 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
                       : "bg-red-100 text-red-700";
                 const dataStr = new Date(
                   pedido.prazoEntrega,
-                ).toLocaleDateString("pt-BR");
-                htmlPrazo = `<span class="px-2 py-1 ${badge} rounded-md text-xs font-bold">${dataStr} (${d}d)</span>`;
+                ).toLocaleDateString("pt-BR", { timeZone: "UTC" }); // Corrige offset
+                htmlPrazo = `<span class="px-2 py-1 ${badge} rounded-md text-[10px] font-bold whitespace-nowrap">${dataStr} (${d}d)</span>`;
               }
 
-              return `<tr class="adm-tr border-b border-gray-200">
-                <td class="p-2 text-[10px] uppercase font-mono">${id.substring(1, 8)}</td>
-                <td class="p-2 font-bold">${pedido.clienteNome || "-"}</td>
-                <td class="p-2">${pedido.produto || "-"}</td>
-                <td class="p-2">${pedido.quantidade || "-"}kg</td>
-                <td class="p-2">${new Date(pedido.data).toLocaleDateString("pt-BR")}</td>
-                <td class="p-2 text-center">${htmlPrazo}</td>
+              return `<tr class="adm-tr border-b border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <td class="p-2 text-[10px] uppercase font-mono text-gray-500">${id.substring(1, 8)}</td>
+                <td class="p-2 font-bold text-[11px] text-gray-900 dark:text-gray-100">${pedido.clienteNome || "-"}</td>
+                <td class="p-2 text-[11px] font-medium text-gray-700 dark:text-gray-300">${pedido.produto || "-"}</td>
+                <td class="p-2 text-[11px] font-mono text-gray-600 dark:text-gray-400">${pedido.quantidade || "-"}kg <br/><span class="text-green-600 font-bold">${pedido.valorTotal || "-"}</span></td>
+                <td class="p-2 text-[10px] text-gray-500 whitespace-nowrap text-center">${new Date(pedido.data).toLocaleDateString("pt-BR")}</td>
+                <td class="p-2 text-center items-center align-middle">${htmlPrazo}</td>
                 ${selects}
-                <td class="p-2 text-center">
-                  <button class="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50" onclick="Admin.deletePedido('${id}')" title="Excluir"><i class="fa-solid fa-trash text-xs"></i></button>
+                <td class="p-2 text-center align-middle">
+                  <button class="bg-red-50 text-red-500 hover:bg-red-100 w-7 h-7 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50 flex items-center justify-center mx-auto" onclick="Admin.deletePedido('${id}')" title="Excluir"><i class="fa-solid fa-trash text-[10px]"></i></button>
                 </td>
             </tr>`;
             })
             .join("");
 
-          // ITEM 6: Updating Header Counters
+          if (paged.length === 0) {
+             tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-gray-400 font-medium text-sm">Nenhum pedido encontrado com os filtros atuais.</td></tr>`;
+          }
+
           const setTxt = (id, val) => {
             if (document.getElementById(id))
               document.getElementById(id).textContent = val;
@@ -2298,13 +2660,207 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
           setTxt("count-fabricacao", fabCount);
           setTxt("count-prontos", prontoCount);
           setTxt("count-entregues", entrCount);
+          
+          setTxt("pag-total", total);
+          setTxt("pag-show", total > 0 ? `${start + 1} - ${Math.min(end, total)}` : "0");
+
+          const btnPrev = document.getElementById("btn-pag-prev");
+          const btnNext = document.getElementById("btn-pag-next");
+          if(btnPrev) btnPrev.disabled = filterState.page <= 1;
+          if(btnNext) btnNext.disabled = filterState.page >= totalPages || total === 0;
+
+          const pageContainer = document.getElementById("pag-numbers");
+          if(pageContainer) {
+              let nums = "";
+              for(let i = 1; i <= totalPages; i++) {
+                 if (i === 1 || i === totalPages || (i >= filterState.page - 1 && i <= filterState.page + 1)) {
+                    nums += `<button class="px-2 py-0.5 mx-0.5 rounded text-[10px] font-bold transition-colors ${i === filterState.page ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}" onclick="Renderer.goToPage(${i})">${i}</button>`;
+                 } else if (i === filterState.page - 2 || i === filterState.page + 2) {
+                    nums += `<span class="px-1 text-gray-400 text-xs">...</span>`;
+                 }
+              }
+              pageContainer.innerHTML = nums;
+          }
         }
-        return { updateAll, renderAdminPanel, renderProducaoTable };
+        
+        function goToPage(p) {
+            filterState.page = p;
+            renderProducaoTable();
+        }
+
+        let chartStatusInst = null, chartVendasInst = null;
+        function renderAnalytics() {
+            const entries = Object.values(AppState.pedidos);
+            const numFab = entries.filter(p => p.statusFinal === 'Em Fabricação').length;
+            const numPronto = entries.filter(p => p.statusFinal === 'Pronto').length;
+            const numEntregue = entries.filter(p => p.statusFinal === 'Entregue').length;
+
+            const now = new Date();
+            let fatM = 0;
+            const prodStats = {};
+            let tmSum = 0, tmCount = 0;
+
+            const seteDiasStr = [...Array(7)].map((_,i) => {
+               const d = new Date(); d.setDate(today.getDate() - (6-i));
+               return `${d.getDate()}/${d.getMonth()+1}`;
+            });
+            const today = new Date();
+            const last7Ops = Array(7).fill(0);
+
+            entries.forEach(p => {
+               const pD = new Date(p.data);
+               // Faturamento mes
+               if(pD.getMonth() === now.getMonth() && pD.getFullYear() === now.getFullYear()) {
+                   fatM += parseFloat(String(p.valorTotal).replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
+               }
+               // Top Produto
+               if(p.produto) {
+                   const nomeP = p.produto.split(' / ')[0];
+                   prodStats[nomeP] = (prodStats[nomeP] || 0) + parseFloat(p.quantidade || 0);
+               }
+               // Tempo Medio (criacao ate agora, se em fabricacao, ou ate prazo)
+               if(p.statusFinal === 'Entregue') {
+                   // Aprox: assumed that data changes status to entregue
+                   // Just simulate a timeline check if not 100% accurate without full trail
+                   const diff = (new Date(p.prazoEntrega).getTime() - pD.getTime()) / (1000*3600*24);
+                   if (diff > 0) { tmSum += diff; tmCount++; }
+               }
+               
+               // Tendencias 7 dias
+               const dIndex = 6 - Math.floor((today.getTime() - pD.getTime()) / (1000*3600*24));
+               if (dIndex >= 0 && dIndex < 7) {
+                   last7Ops[dIndex]++;
+               }
+            });
+
+            document.getElementById('dash-faturamento').textContent = formatBRL(fatM);
+            const topProdObj = Object.entries(prodStats).sort((a,b)=>b[1]-a[1])[0];
+            document.getElementById('dash-top-produto').innerHTML = topProdObj ? `${topProdObj[0]} <span class="text-sm font-medium text-gray-500">(${topProdObj[1]}kg)</span>` : '-';
+            document.getElementById('dash-tempo-medio').textContent = tmCount ? Math.round(tmSum/tmCount) + ' Dias' : 'N/D';
+
+            // Render Charts
+            if(!window.Chart) return;
+            
+            if(chartStatusInst) chartStatusInst.destroy();
+            chartStatusInst = new Chart(document.getElementById('chart-status'), {
+               type: 'doughnut',
+               data: {
+                  labels: ['Em Fabricação', 'Pronto', 'Entregue'],
+                  datasets: [{
+                     data: [numFab, numPronto, numEntregue],
+                     backgroundColor: ['#3b82f6', '#eab308', '#22c55e']
+                  }]
+               },
+               options: { plugins: { legend: { position: 'bottom' } } }
+            });
+
+            if(chartVendasInst) chartVendasInst.destroy();
+            chartVendasInst = new Chart(document.getElementById('chart-vendas'), {
+               type: 'bar',
+               data: {
+                  labels: seteDiasStr,
+                  datasets: [{
+                     label: 'Pedidos',
+                     data: last7Ops,
+                     backgroundColor: '#111827',
+                     borderRadius: 4
+                  }]
+               },
+               options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+        
+        function renderKanban() {
+            const cols = {
+               'Em Fabricação': document.getElementById('kb-col-em-fabricacao'),
+               'Pronto': document.getElementById('kb-col-pronto'),
+               'Entregue': document.getElementById('kb-col-entregue'),
+            };
+            if(!cols['Em Fabricação']) return;
+            
+            Object.values(cols).forEach(c => c.innerHTML = '');
+            
+            let countF = 0, countP = 0, countE = 0;
+            Object.entries(AppState.pedidos).forEach(([id, p]) => {
+                const c = p.statusFinal || 'Em Fabricação';
+                if(c === 'Em Fabricação') countF++;
+                else if (c === 'Pronto') countP++;
+                else if (c === 'Entregue') countE++;
+                else return; // unmapped
+                
+                const card = document.createElement('div');
+                card.draggable = true;
+                card.className = "bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing text-xs hover:border-primary transition-colors";
+                card.dataset.id = id;
+                card.addEventListener('dragstart', e => {
+                   e.dataTransfer.setData('text/plain', id);
+                   card.classList.add('opacity-50');
+                });
+                card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
+                
+                card.innerHTML = `
+                   <div class="flex justify-between items-center mb-2">
+                      <span class="font-mono text-[9px] text-gray-500 uppercase">${id.substring(1, 8)}</span>
+                      <span class="font-bold text-green-600">${p.valorTotal}</span>
+                   </div>
+                   <div class="font-bold text-gray-900">${p.clienteNome || 'S/N'}</div>
+                   <div class="text-gray-600 truncate mt-1">${p.produto}</div>
+                   <div class="text-[10px] text-gray-400 mt-2 flex justify-between">
+                      <span>${p.quantidade}kg</span>
+                      <span>${new Date(p.data).toLocaleDateString('pt-BR')}</span>
+                   </div>
+                `;
+                cols[c].appendChild(card);
+            });
+            
+            document.getElementById('kb-count-em-fabricacao').textContent = countF;
+            document.getElementById('kb-count-pronto').textContent = countP;
+            document.getElementById('kb-count-entregue').textContent = countE;
+        }
+
+        // Kanban Drag events
+        document.addEventListener('DOMContentLoaded', () => {
+           document.querySelectorAll('.kanban-column').forEach(col => {
+               col.addEventListener('dragover', e => {
+                   e.preventDefault();
+                   col.classList.add('bg-gray-200/50', 'border-dashed', 'border-gray-400');
+               });
+               col.addEventListener('dragleave', () => {
+                   col.classList.remove('bg-gray-200/50', 'border-dashed', 'border-gray-400');
+               });
+               col.addEventListener('drop', e => {
+                   e.preventDefault();
+                   col.classList.remove('bg-gray-200/50', 'border-dashed', 'border-gray-400');
+                   const id = e.dataTransfer.getData('text/plain');
+                   const status = col.dataset.status;
+                   if (id && status) {
+                       DataStore.updatePedidoStatus(id, 'statusFinal', status);
+                   }
+               });
+           });
+           
+           auditRef.orderByChild('timestamp').limitToLast(50).on('value', snap => {
+              const tb = document.getElementById('adm-lista-audit');
+              if(!tb) return;
+              const data = snap.val();
+              if(!data) { tb.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum evento registrado.</td></tr>`; return; }
+              const arr = Object.values(data).sort((a,b) => b.timestamp - a.timestamp);
+              tb.innerHTML = arr.map(h => `
+                 <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td class="px-5 py-3 text-gray-500 font-mono text-[10px] whitespace-nowrap">${new Date(h.timestamp).toLocaleString('pt-BR')}</td>
+                    <td class="px-5 py-3 font-bold text-gray-700 clamp-1">${h.user}</td>
+                    <td class="px-5 py-3 text-gray-900 font-medium">${h.action}</td>
+                    <td class="px-5 py-3 text-gray-500">${h.details}</td>
+                 </tr>
+              `).join('');
+           });
+        });
+
+        return { updateAll, renderAdminPanel, renderProducaoTable, initFilters, goToPage, renderAnalytics, renderKanban };
       })();
 
       const Admin = (() => {
         function init() {
-          // Tab switching
           document.querySelectorAll(".admin-tab-btn").forEach((btn) => {
             btn.addEventListener("click", () => {
               document
@@ -2322,7 +2878,6 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             });
           });
 
-          // Config Forms
           ["form-admin-contatos", "form-admin-piquet"].forEach((id) => {
             document.getElementById(id)?.addEventListener("submit", (e) => {
               e.preventDefault();
@@ -2336,13 +2891,14 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             });
           });
 
-          // ★ ITEM 4: Google Sheets Config + Exportar
           document
             .getElementById("form-admin-sheets")
             ?.addEventListener("submit", (e) => {
               e.preventDefault();
               AppState.urlSheets =
                 document.getElementById("adm-url-sheets").value;
+              AppState.sheetAutoLead = document.getElementById("adm-sheet-lead").checked;
+              AppState.sheetAutoStatus = document.getElementById("adm-sheet-status").checked;
               DataStore.save();
             });
 
@@ -2351,14 +2907,18 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             ?.addEventListener("click", async () => {
               if (!AppState.urlSheets)
                 return Toast.show(
-                  "Configure a URL do Google Sheets na aba Configurações primeiro!",
+                  "Configure a URL da API na aba Configurações primeiro!",
                   "warning",
                 );
 
-              Toast.show("Exportando dados...", "info");
-              const dataToExport = Object.entries(AppState.pedidos).map(
-                ([id, p]) => ({ id, ...p }),
-              );
+              Toast.show("Iniciando Backup Geral...", "info");
+              const dataToExport = {
+                action: "FULL_BACKUP",
+                pedidos: AppState.pedidos || {},
+                produtos: AppState.produtos || {},
+                cores: AppState.cores || {},
+                contatos: AppState.contatos || {}
+              };
 
               try {
                 await fetch(AppState.urlSheets, {
@@ -2368,7 +2928,7 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
                   body: JSON.stringify(dataToExport),
                 });
                 Toast.show(
-                  "Dados exportados com sucesso para o Sheets!",
+                  "Comando de Backup Enviado com sucesso!",
                   "success",
                 );
               } catch (err) {
@@ -2376,7 +2936,6 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
               }
             });
 
-          // Login
           document
             .getElementById("form-login")
             ?.addEventListener("submit", (e) => {
@@ -2391,6 +2950,7 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
                 Toast.show("Senha incorreta", "error");
               }
             });
+
           document
             .getElementById("btn-logout")
             ?.addEventListener("click", () => {
@@ -2398,7 +2958,6 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
               Navigation.switchPage("home");
             });
 
-          // Sync Status changes
           document.addEventListener("change", (e) => {
             if (e.target.classList.contains("producao-status-select")) {
               DataStore.updatePedidoStatus(
@@ -2406,26 +2965,30 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
                 e.target.dataset.f,
                 e.target.value,
               );
+              
+              if (AppState.urlSheets && AppState.sheetAutoStatus) {
+                const payload = {
+                  action: "UPDATE_STATUS",
+                  id: e.target.dataset.i,
+                  campo: e.target.dataset.f,
+                  valor: e.target.value
+                };
+                fetch(AppState.urlSheets, {
+                  method: "POST",
+                  mode: "no-cors",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                }).catch(err => console.error(err));
+              }
             }
           });
 
-          // ★ ITEM 2: Filtro em Tempo Real (Busca)
-          document
-            .getElementById("search-production")
-            ?.addEventListener("input", (e) => {
-              const term = e.target.value.toLowerCase();
-              document
-                .querySelectorAll("#producao-lista-pedidos tr")
-                .forEach((row) => {
-                  row.style.display = row.textContent
-                    .toLowerCase()
-                    .includes(term)
-                    ? ""
-                    : "none";
-                });
-            });
+          let searchTimeout;
+          if (document.getElementById("btn-clear-filters") && !document.getElementById("btn-clear-filters").dataset.bound) {
+             document.getElementById("btn-clear-filters").dataset.bound = "true";
+             Renderer.initFilters();
+          }
 
-          // ★ ITEM 3: Prevenção de Perda de Dados
           document.addEventListener("input", (e) => {
             if (AppState.isAdminLogado && e.target.closest("form"))
               AppState.hasUnsavedChanges = true;
@@ -2439,27 +3002,35 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
         }
 
         async function deletePedido(id) {
-  if (confirm("Tem certeza que deseja apagar este pedido?")) {
-    try {
-      await pedidosRef.child(id).remove();
+          CustomConfirm.show("Tem certeza que deseja apagar este pedido?", async () => {
+            try {
+              document.body.style.cursor = 'wait';
+              await pedidosRef.child(id).remove();
+              Toast.show("Pedido apagado com sucesso!", "success");
+            } catch (error) {
+              console.error(error);
+              Toast.show("Erro ao apagar pedido!", "error");
+            } finally {
+              document.body.style.cursor = 'default';
+            }
+          });
+        }
 
-      Renderer.renderAdminPanel();
-      Toast.show("Pedido apagado com sucesso!", "success");
-    } catch (error) {
-      console.error(error);
-      Toast.show("Erro ao apagar pedido!", "error");
-    }
-  }
-async function deleteProduto(id) {
-  if (confirm("Tem certeza que deseja apagar este produto?")) {
-    delete AppState.produtos[id];
-
-    await DataStore.save();
-
-    Renderer.updateAll();
-    Toast.show("Produto apagado com sucesso!", "success");
-  }
-}
+        async function deleteProduto(id) {
+          CustomConfirm.show("Tem certeza que deseja apagar este produto?", async () => {
+            try {
+              document.body.style.cursor = 'wait';
+              delete AppState.produtos[id];
+              await DataStore.save();
+              Renderer.updateAll();
+              Toast.show("Produto apagado com sucesso!", "success");
+            } catch(e) {
+              Toast.show("Erro ao apagar produto!", "error");
+            } finally {
+              document.body.style.cursor = 'default';
+            }
+          });
+        }
                       
         function createProduto() {
           document.getElementById("modal-produto-title").textContent =
@@ -2483,13 +3054,20 @@ async function deleteProduto(id) {
           Modal.open("modal-produto");
         }
 
-        function deleteCor(id) {
-          if (confirm("Tem certeza que deseja apagar esta cor?")) {
-            delete AppState.cores[id];
-            DataStore.save();
-            Renderer.updateAll();
-            Toast.show("Cor apagada com sucesso!", "success");
-          }
+        async function deleteCor(id) {
+          CustomConfirm.show("Tem certeza que deseja apagar esta cor?", async () => {
+            try {
+              document.body.style.cursor = 'wait';
+              delete AppState.cores[id];
+              await DataStore.save();
+              Renderer.updateAll();
+              Toast.show("Cor apagada com sucesso!", "success");
+            } catch(e) {
+              Toast.show("Erro ao apagar cor!", "error");
+            } finally {
+              document.body.style.cursor = 'default';
+            }
+          });
         }
 
         function createCor() {
@@ -2509,7 +3087,6 @@ async function deleteProduto(id) {
           Modal.open("modal-cor");
         }
 
-        // --- SUBMITS FOR MODALS ---
         document
           .getElementById("form-produto")
           ?.addEventListener("submit", (e) => {
@@ -2567,7 +3144,6 @@ async function deleteProduto(id) {
         };
       })();
 
-      // Export tools to window so that inline handlers work
       window.Admin = Admin;
 
       const ContatoForm = (() => {
@@ -2603,7 +3179,6 @@ async function deleteProduto(id) {
             if (btnTxt) btnTxt.textContent = "Enviando…";
             if (btnEl) btnEl.disabled = true;
 
-            // Simula envio
             await new Promise((r) => setTimeout(r, 1000));
 
             form.reset();
@@ -2622,12 +3197,40 @@ async function deleteProduto(id) {
 
       document.addEventListener("DOMContentLoaded", () => {
         initDarkMode();
+
+        // Mobile drawer setup
+        const drawer = document.getElementById("mobile-drawer");
+        const backdrop = document.getElementById("drawer-backdrop");
+
+        function closeDrawer() {
+          drawer?.classList.remove("open");
+          backdrop?.classList.remove("open");
+        }
+
+        document
+          .getElementById("btn-open-drawer")
+          ?.addEventListener("click", () => {
+            drawer?.classList.add("open");
+            backdrop?.classList.add("open");
+          });
+          
+        document
+          .getElementById("btn-close-drawer")
+          ?.addEventListener("click", closeDrawer);
+          
+        backdrop?.addEventListener("click", closeDrawer);
+
         document.addEventListener("click", (e) => {
           const btn = e.target.closest("[data-page]");
-          if (btn && !btn.closest("#mobile-drawer"))
+          if (btn) {
             Navigation.switchPage(btn.dataset.page);
-          if (e.target.closest(".btn-close-modal"))
+            if (btn.closest("#mobile-drawer")) {
+              closeDrawer();
+            }
+          }
+          if (e.target.closest(".btn-close-modal")) {
             Modal.close(e.target.closest(".pf-modal").id);
+          }
         });
 
         document
@@ -2648,6 +3251,10 @@ async function deleteProduto(id) {
         document
           .getElementById("btn-email")
           ?.addEventListener("click", () => Calculator.dispatchLead("email"));
+
+        document
+          .getElementById("btn-download-pdf")
+          ?.addEventListener("click", () => Calculator.downloadPDF());
 
         ContatoForm.init();
         Admin.init();
