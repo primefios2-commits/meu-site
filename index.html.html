@@ -2437,22 +2437,30 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
             }
           });
         }
-function deletePedido(id) {
-  if (confirm("Tem certeza que deseja apagar este pedido?")) {
-    
-    // ATENÇÃO: Verifique se o nome do seu nó no Firebase é 'pedidosPrimeFios' ou apenas 'pedidos'
-    firebase.database().ref('pedidosPrimeFios').child(id).remove()
-      .then(() => {
-        Toast.show("Pedido apagado com sucesso!", "success");
-      })
-      .catch((err) => {
-        Toast.show("Erro ao apagar no banco de dados.", "error");
-        console.error(err);
-      });
-      
-  }
-}
+               if (confirm("Tem certeza que deseja apagar este pedido?")) {
 
+            delete AppState.pedidos[id];
+
+            DataStore.save();
+
+            Renderer.renderAdminPanel();
+
+            Toast.show("Pedido apagado com sucesso!", "success");
+
+          }
+
+        }
+
+
+        function deleteProduto(id) {
+
+          if (confirm("Tem certeza que deseja apagar este produto?")) {
+            delete AppState.produtos[id];
+            DataStore.save();
+            Renderer.updateAll();
+            Toast.show("Produto apagado com sucesso!", "success");
+          }
+        } 
         function createProduto() {
           document.getElementById("modal-produto-title").textContent =
             "Novo Produto";
