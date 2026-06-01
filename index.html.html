@@ -1555,7 +1555,6 @@
             &copy; 2026 Prime Fios. Todos os direitos reservados. CNPJ:
             00.000.000/0001-00
           </p>
-          <p>Rua Industrial da Malha, 1234 - Brusque - SC</p>
         </div>
       </div>
     </footer>
@@ -2440,23 +2439,18 @@ _*Sujeito a variação de quebra (percas) de 6% a 8%*._`;
         }
 
         function deletePedido(id) {
-          if (confirm("Tem certeza que deseja apagar este pedido?")) {
-            delete AppState.pedidos[id];
-            DataStore.save();
-            Renderer.renderAdminPanel();
-            Toast.show("Pedido apagado com sucesso!", "success");
-          }
-        }
-
-        function deleteProduto(id) {
-          if (confirm("Tem certeza que deseja apagar este produto?")) {
-            delete AppState.produtos[id];
-            DataStore.save();
-            Renderer.updateAll();
-            Toast.show("Produto apagado com sucesso!", "success");
-          }
-        }
-
+  if (confirm("Tem certeza que deseja apagar este pedido?")) {
+    // Remove diretamente do nó de pedidos do Firebase
+    pedidosRef.child(id).remove()
+      .then(() => {
+        Toast.show("Pedido apagado com sucesso!", "success");
+      })
+      .catch((err) => {
+        Toast.show("Erro ao apagar no banco de dados.", "error");
+        console.error(err);
+      });
+  }
+}
         function createProduto() {
           document.getElementById("modal-produto-title").textContent =
             "Novo Produto";
