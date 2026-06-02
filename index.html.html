@@ -1,3266 +1,854 @@
 <!doctype html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prime Fios — Portal Têxtil & Orçamentos</title>
-
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-
-    <!-- Google Fonts: Barlow Condensed (display) + Barlow (body) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Firebase SDKs (v8 compat) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-    <!-- Libs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-    <!-- ============================================================
-         TAILWIND CONFIG
-    ============================================================ -->
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              primary: "#1e3a8a",
-              secondary: "#0284c7",
-              accent: "#f59e0b",
-            },
-            fontFamily: {
-              display: ['"Barlow Condensed"', "sans-serif"],
-              body: ["Barlow", "sans-serif"],
-            },
-          },
-        },
-      };
-    </script>
-
-    <!-- ============================================================
-         ESTILOS GLOBAIS
-    ============================================================ -->
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-      body {
-        font-family: "Barlow", sans-serif;
-      }
-      h1,
-      h2,
-      h3,
-      h4,
-      h5 {
-        font-family: "Barlow Condensed", sans-serif;
-      }
-
-      .pf-section {
-        display: none;
-      }
-      .pf-section.is-active {
-        display: block;
-      }
-
-      @keyframes pageFadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .pf-section.is-active {
-        animation: pageFadeIn 0.25s ease-out forwards;
-      }
-
-      .pf-section.is-active.grid-layout {
-        display: grid;
-      }
-
-      @keyframes toastIn {
-        from {
-          transform: translateX(110%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      @keyframes toastOut {
-        from {
-          opacity: 1;
-        }
-        to {
-          opacity: 0;
-          transform: translateX(110%);
-        }
-      }
-      .toast-in {
-        animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      }
-      .toast-out {
-        animation: toastOut 0.25s ease-in forwards;
-      }
-
-      .pf-spinner {
-        border: 3px solid rgba(255, 255, 255, 0.2);
-        border-top-color: #ffffff;
-        border-radius: 50%;
-        width: 18px;
-        height: 18px;
-        animation: spin 0.7s linear infinite;
-      }
-      .pf-spinner.dark {
-        border-color: rgba(30, 58, 138, 0.15);
-        border-top-color: #1e3a8a;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      @keyframes shimmer {
-        0% {
-          background-position: -600px 0;
-        }
-        100% {
-          background-position: 600px 0;
-        }
-      }
-      .skeleton {
-        background: linear-gradient(
-          90deg,
-          #f0f4f8 25%,
-          #e2e8f0 50%,
-          #f0f4f8 75%
-        );
-        background-size: 600px 100%;
-        animation: shimmer 1.4s infinite linear;
-        border-radius: 6px;
-      }
-
-      .nav-item {
-        position: relative;
-        padding-bottom: 3px;
-      }
-      .nav-item::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        width: 0;
-        height: 2px;
-        background: #1e3a8a;
-        transition: width 0.25s ease;
-      }
-      .nav-item.active {
-        color: #1e3a8a;
-        font-weight: 700;
-      }
-      .nav-item.active::after {
-        width: 100%;
-      }
-
-      #mobile-drawer {
-        transform: translateX(-100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      #mobile-drawer.open {
-        transform: translateX(0);
-      }
-      #drawer-backdrop {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-      }
-      #drawer-backdrop.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
-
-      .pf-modal {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s ease;
-      }
-      .pf-modal.open {
-        opacity: 1;
-        pointer-events: auto;
-      }
-      .pf-modal .modal-card {
-        transform: scale(0.95) translateY(-8px);
-        transition:
-          transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1),
-          opacity 0.25s ease;
-        opacity: 0;
-      }
-      .pf-modal.open .modal-card {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-      }
-
-      .pf-input {
-        width: 100%;
-        background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-family: "Barlow", sans-serif;
-        font-size: 0.9rem;
-        font-weight: 500;
-        outline: none;
-        transition:
-          border-color 0.2s,
-          box-shadow 0.2s,
-          background 0.2s;
-      }
-      .pf-input:focus {
-        border-color: #1e3a8a;
-        background: #fff;
-        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-      }
-      .pf-input.error {
-        border-color: #ef4444;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-      }
-      .pf-input.success {
-        border-color: #10b981;
-      }
-
-      .pf-card-hover {
-        transition:
-          transform 0.2s ease,
-          box-shadow 0.2s ease;
-      }
-      .pf-card-hover:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(30, 58, 138, 0.1);
-      }
-
-      .result-value {
-        transition: all 0.2s ease;
-      }
-
-      .hero-diagonal::after {
-        content: "";
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        right: 0;
-        height: 40px;
-        background: #f8fafc;
-        clip-path: polygon(0 100%, 100% 0, 100% 100%);
-      }
-
-      .adm-tr:hover td {
-        background: #f8fafc;
-      }
-
-      input[type="number"]::-webkit-inner-spin-button,
-      input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-      }
-      input[type="number"] {
-        -moz-appearance: textfield;
-      }
-
-      ::-webkit-scrollbar {
-        width: 5px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-      }
-
-      .field-error {
-        color: #ef4444;
-        font-size: 0.72rem;
-        font-weight: 600;
-        margin-top: 4px;
-        display: none;
-      }
-      .field-error.show {
-        display: block;
-      }
-
-      #banner-db-error {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 9999;
-        background: #dc2626;
-        color: #fff;
-        text-align: center;
-        padding: 10px 16px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        font-family: "Barlow", sans-serif;
-        letter-spacing: 0.01em;
-        box-shadow: 0 2px 12px rgba(220, 38, 38, 0.3);
-      }
-      #banner-db-error.show {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-
-      .status-select {
-        border-radius: 8px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 4px 6px;
-        border: 1.5px solid;
-        cursor: pointer;
-        outline: none;
-        transition: all 0.2s;
-      }
-      .status-pending {
-        background: #fff7ed;
-        border-color: #fb923c;
-        color: #c2410c;
-      }
-      .status-progress {
-        background: #eff6ff;
-        border-color: #60a5fa;
-        color: #1d4ed8;
-      }
-      .status-done {
-        background: #f0fdf4;
-        border-color: #4ade80;
-        color: #15803d;
-      }
-
-      .dark body,
-      .dark .bg-slate-50 {
-        background-color: #111827;
-        color: #f9fafb;
-      }
-      .dark .bg-white {
-        background-color: #1f2937;
-        border-color: #374151;
-      }
-      .dark .text-gray-900 {
-        color: #f9fafb;
-      }
-      .dark .text-gray-800 {
-        color: #f3f4f6;
-      }
-      .dark .text-gray-700 {
-        color: #e5e7eb;
-      }
-      .dark .text-gray-600 {
-        color: #d1d5db;
-      }
-      .dark .text-gray-500 {
-        color: #9ca3af;
-      }
-      .dark .border-gray-100,
-      .dark .border-gray-200 {
-        border-color: #374151;
-      }
-      .dark .pf-input {
-        background: #374151;
-        border-color: #4b5563;
-        color: #f9fafb;
-      }
-      .dark .pf-input:focus {
-        border-color: #3b82f6;
-        background: #1f2937;
-      }
-      .dark .bg-gray-50,
-      .dark .bg-gray-100 {
-        background-color: #374151;
-        color: #e5e7eb;
-      }
-      .dark .bg-blue-50 {
-        background-color: rgba(30, 58, 138, 0.3);
-      }
-      .dark .text-blue-800 {
-        color: #93c5fd;
-      }
-      .dark .border-blue-200 {
-        border-color: rgba(59, 130, 246, 0.3);
-      }
-      .dark header {
-        background-color: rgba(31, 41, 55, 0.95);
-        border-bottom-color: #374151;
-      }
-      .dark .modal-card {
-        background-color: #1f2937;
-        color: #f9fafb;
-        border: 1px solid #374151;
-      }
-      .dark .adm-tr:hover td {
-        background: #374151;
-      }
-      .dark .hero-diagonal::after {
-        background: #111827;
-      }
-    </style>
-  </head>
-
-  <body
-    class="bg-slate-50 text-gray-800 min-h-screen flex flex-col overflow-x-hidden"
-  >
-    <div id="banner-db-error" role="alert">
-      <i class="fa-solid fa-triangle-exclamation"></i>
-      <span
-        >Falha na conexão com o banco de dados. Os valores exibidos podem estar
-        zerados. Verifique sua internet e recarregue a página.</span
-      >
+<html lang="pt-BR" class="antialiased">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prime Fios — Portal Têxtil & Orçamentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: { extend: {
+          colors: { primary: "#1e3a8a", secondary: "#0284c7", accent: "#f59e0b" },
+          fontFamily: { display: ['"Barlow Condensed"', "sans-serif"], body: ["Barlow", "sans-serif"] },
+      }}
+    };
+  </script>
+  <style>
+    body { font-family: "Barlow", sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: "Barlow Condensed", sans-serif; }
+    .pf-section { display: none; }
+    .pf-section.is-active { display: block; animation: pageFadeIn 0.25s ease-out forwards; }
+    .pf-section.is-active.grid-layout { display: grid; }
+    @keyframes pageFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .toast-in { animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .toast-out { animation: toastOut 0.25s ease-in forwards; }
+    @keyframes toastIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(110%); } }
+    .skeleton { background: linear-gradient(90deg, #f0f4f8 25%, #e2e8f0 50%, #f0f4f8 75%); background-size: 600px 100%; animation: shimmer 1.4s infinite linear; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: -600px 0; } 100% { background-position: 600px 0; } }
+    .nav-item { position: relative; padding-bottom: 3px; }
+    .nav-item::after { content: ""; position: absolute; left: 0; bottom: 0; width: 0; height: 2px; background: #1e3a8a; transition: width 0.25s ease; }
+    .nav-item.active { color: #1e3a8a; font-weight: 700; }
+    .nav-item.active::after { width: 100%; }
+    #mobile-drawer { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    #mobile-drawer.open { transform: translateX(0); }
+    #drawer-backdrop { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    #drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .pf-modal { opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+    .pf-modal.open { opacity: 1; pointer-events: auto; }
+    .pf-modal .modal-card { transform: scale(0.95) translateY(-8px); transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.25s ease; opacity: 0; }
+    .pf-modal.open .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+    .pf-input { width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; font-size: 0.9rem; font-weight: 500; outline: none; transition: all 0.2s; }
+    .pf-input:focus { border-color: #1e3a8a; background: #fff; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+    .pf-card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .pf-card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(30, 58, 138, 0.1); }
+    .hero-diagonal::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 40px; background: #f8fafc; clip-path: polygon(0 100%, 100% 0, 100% 100%); }
+    .status-select { border-radius: 8px; font-size: 0.72rem; font-weight: 700; padding: 4px 6px; border: 1.5px solid; cursor: pointer; outline: none; }
+    .status-pending { background: #fff7ed; border-color: #fb923c; color: #c2410c; }
+    .status-progress { background: #eff6ff; border-color: #60a5fa; color: #1d4ed8; }
+    .status-done { background: #f0fdf4; border-color: #4ade80; color: #15803d; }
+    .dark body, .dark .bg-slate-50 { background-color: #111827; color: #f9fafb; }
+    .dark .bg-white { background-color: #1f2937; border-color: #374151; }
+    .dark .text-gray-900 { color: #f9fafb; } .dark .text-gray-800 { color: #f3f4f6; } .dark .text-gray-700 { color: #e5e7eb; }
+    .dark .pf-input { background: #374151; border-color: #4b5563; color: #f9fafb; }
+    .dark .pf-input:focus { border-color: #3b82f6; background: #1f2937; }
+    .dark header { background-color: rgba(31, 41, 55, 0.95); border-bottom-color: #374151; }
+    .dark .hero-diagonal::after { background: #111827; }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-800 min-h-screen flex flex-col overflow-x-hidden">
+  <div id="toast-container" class="fixed top-20 right-3 z-[200] flex flex-col gap-2 pointer-events-none"></div>
+  <div id="drawer-backdrop" class="fixed inset-0 bg-black/50 z-[80] md:hidden backdrop-blur-sm" aria-hidden="true"></div>
+  
+  <aside id="mobile-drawer" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-900 z-[90] shadow-2xl md:hidden flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow"><i class="fa-solid fa-scissors text-white text-sm"></i></div>
+        <div><div class="font-display text-base font-black text-primary">PRIME FIOS</div><div class="text-[10px] text-gray-400 font-semibold uppercase">Assessoria Têxtil</div></div>
+      </div>
+      <button id="btn-close-drawer" class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-xmark"></i></button>
     </div>
+    <nav class="flex flex-col gap-1 p-4 flex-1">
+      <button data-page="home" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary"><i class="fa-solid fa-house w-4 text-secondary"></i> Quem Somos</button>
+      <button data-page="orcamento" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary"><i class="fa-solid fa-calculator w-4 text-secondary"></i> Pré-Orçamento</button>
+      <button data-page="contato" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-primary/5 hover:text-primary"><i class="fa-solid fa-envelope w-4 text-secondary"></i> Contato</button>
+      <div class="border-t border-gray-100 dark:border-gray-800 my-2"></div>
+      <button data-page="admin" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-primary"><i class="fa-solid fa-lock w-4"></i> Painel Admin</button>
+    </nav>
+  </aside>
 
-    <div
-      id="toast-container"
-      class="fixed top-20 right-3 z-[200] flex flex-col gap-2 pointer-events-none"
-    ></div>
-
-    <div
-      id="drawer-backdrop"
-      class="fixed inset-0 bg-black/50 z-[80] md:hidden backdrop-blur-sm"
-      aria-hidden="true"
-    ></div>
-
-    <aside
-      id="mobile-drawer"
-      class="fixed top-0 left-0 h-full w-72 bg-white z-[90] shadow-2xl md:hidden flex flex-col"
-      role="navigation"
-    >
-      <div
-        class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
-      >
-        <div class="flex items-center gap-3">
-          <div
-            class="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow"
-          >
-            <i class="fa-solid fa-scissors text-white text-sm"></i>
-          </div>
-          <div>
-            <div
-              class="font-display text-base font-black text-primary leading-none tracking-tight"
-            >
-              PRIME FIOS
-            </div>
-            <div
-              class="text-[10px] text-gray-400 font-semibold tracking-widest uppercase mt-0.5"
-            >
-              Assessoria Têxtil
-            </div>
-          </div>
-        </div>
-        <button
-          id="btn-close-drawer"
-          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-        >
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <nav class="flex flex-col gap-1 p-4 flex-1">
-        <button
-          data-page="home"
-          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all text-left"
-        >
-          <i class="fa-solid fa-house w-4 text-secondary"></i>
-          Quem Somos
-        </button>
-        <button
-          data-page="orcamento"
-          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all text-left"
-        >
-          <i class="fa-solid fa-calculator w-4 text-secondary"></i>
-          Pré-Orçamento
-        </button>
-        <button
-          data-page="contato"
-          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 hover:bg-primary/5 hover:text-primary transition-all text-left"
-        >
-          <i class="fa-solid fa-envelope w-4 text-secondary"></i>
-          Contato
-        </button>
-        <div class="border-t border-gray-100 my-2"></div>
-        <button
-          data-page="admin"
-          class="drawer-nav-btn flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-blue-900 transition-all shadow-md text-left"
-        >
-          <i class="fa-solid fa-lock w-4"></i>
-          Painel Admin
-        </button>
+  <header class="bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between gap-4">
+      <button id="logo-btn" data-page="home" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 bg-primary group-hover:bg-blue-900 text-white rounded-xl flex items-center justify-center shadow-lg transition-colors"><i class="fa-solid fa-scissors"></i></div>
+        <div class="text-left"><span class="block font-display text-xl font-black text-primary leading-none">PRIME FIOS</span><span class="block text-[10px] text-gray-400 font-semibold uppercase mt-0.5">Assessoria Têxtil</span></div>
+      </button>
+      <nav class="hidden md:flex items-center gap-7 font-semibold text-gray-500 text-sm">
+        <button data-page="home" class="nav-item hover:text-primary">Quem Somos</button>
+        <button data-page="orcamento" class="nav-item hover:text-primary">Pré-Orçamento</button>
+        <button data-page="contato" class="nav-item hover:text-primary">Contato</button>
       </nav>
-    </aside>
+      <div class="flex items-center gap-3">
+        <a id="hdr-insta" href="#" target="_blank" class="hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-pink-600 text-lg transition-all dark:hover:bg-gray-700"><i class="fa-brands fa-instagram"></i></a>
+        <button id="btn-toggle-dark" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-600 transition-all dark:text-gray-300 dark:hover:bg-gray-700"><i class="fa-solid fa-moon"></i></button>
+        <button data-page="admin" class="hidden md:flex items-center gap-2 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 px-4 py-2 rounded-xl text-xs font-bold transition-all"><i class="fa-solid fa-lock"></i> Painel</button>
+        <button id="btn-open-drawer" class="md:hidden w-9 h-9 rounded-xl hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-bars text-lg"></i></button>
+      </div>
+    </div>
+  </header>
 
-    <header
-      class="bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm sticky top-0 z-30"
-    >
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[68px] flex items-center justify-between gap-4"
-      >
-        <button
-          id="logo-btn"
-          class="flex items-center gap-3 group"
-          aria-label="Ir para início"
-        >
-          <div
-            class="w-10 h-10 bg-primary group-hover:bg-blue-900 text-white rounded-xl flex items-center justify-center shadow-lg transition-colors"
-          >
-            <i class="fa-solid fa-scissors text-base"></i>
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <!-- HOME -->
+    <section id="page-home" class="pf-section is-active space-y-14">
+      <div class="relative overflow-hidden bg-primary rounded-3xl text-white px-8 py-16 md:py-20 hero-diagonal shadow-lg">
+        <div class="relative z-10 max-w-3xl mx-auto text-center space-y-5">
+          <span class="inline-block bg-white/10 border border-white/20 text-blue-100 text-xs font-bold uppercase px-4 py-1.5 rounded-full">Engenharia Têxtil Integrada</span>
+          <h1 class="font-display text-4xl md:text-6xl font-black leading-tight">Excelência em Fornecimento<br class="hidden md:block" /> e Industrialização Têxtil</h1>
+          <p class="text-blue-200 text-base md:text-lg max-w-2xl mx-auto">A Prime Fios une tecnologia de ponta, matérias-primas rigorosamente selecionadas e engenharia de precisão para entregar as melhores malhas do mercado nacional.</p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <button data-page="orcamento" class="bg-accent hover:bg-amber-400 text-white font-bold px-7 py-3 rounded-xl shadow-lg transition-all text-sm"><i class="fa-solid fa-calculator mr-2"></i> Simular Orçamento</button>
+            <button data-page="contato" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-7 py-3 rounded-xl transition-all text-sm"><i class="fa-solid fa-envelope mr-2"></i> Falar Conosco</button>
           </div>
-          <div>
-            <span
-              class="block font-display text-xl font-black text-primary tracking-tight leading-none"
-              >PRIME FIOS</span
-            >
-            <span
-              class="block text-[10px] text-gray-400 font-semibold tracking-widest uppercase mt-0.5"
-              >Assessoria Têxtil</span
-            >
-          </div>
-        </button>
-
-        <nav
-          class="hidden md:flex items-center gap-7 font-semibold text-gray-500 text-sm"
-          aria-label="Navegação principal"
-        >
-          <button
-            data-page="home"
-            class="nav-item desktop-nav-btn transition-colors hover:text-primary"
-          >
-            Quem Somos
-          </button>
-          <button
-            data-page="orcamento"
-            class="nav-item desktop-nav-btn transition-colors hover:text-primary"
-          >
-            Pré-Orçamento
-          </button>
-          <button
-            data-page="contato"
-            class="nav-item desktop-nav-btn transition-colors hover:text-primary"
-          >
-            Contato
-          </button>
-        </nav>
-
-        <div class="flex items-center gap-3">
-          <button
-            id="btn-toggle-dark"
-            class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
-            title="Alternar Modo Escuro"
-          >
-            <i class="fa-solid fa-moon"></i>
-          </button>
-
-          <button
-            data-page="admin"
-            id="desktop-admin-btn"
-            class="hidden md:flex items-center gap-2 bg-gray-100 hover:bg-primary hover:text-white text-gray-700 px-4 py-2 rounded-xl text-xs font-bold transition-all"
-          >
-            <i class="fa-solid fa-lock text-[11px]"></i>
-            <span>Painel Admin</span>
-          </button>
-
-          <button
-            id="btn-open-drawer"
-            class="md:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-600 transition-colors"
-            aria-label="Abrir menu"
-            aria-expanded="false"
-          >
-            <i class="fa-solid fa-bars text-lg"></i>
-          </button>
         </div>
       </div>
-    </header>
+      <div>
+        <h2 class="font-display text-3xl font-black text-primary mb-8 text-center">Por Que Escolher a Prime Fios?</h2>
+        <div id="features-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </div>
+    </section>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <section id="page-home" class="pf-section is-active space-y-14">
-        <div
-          class="relative overflow-hidden bg-primary rounded-3xl text-white px-8 py-16 md:py-20 hero-diagonal"
-        >
-          <div
-            class="absolute inset-0 opacity-10"
-            style="
-              background-image:
-                repeating-linear-gradient(
-                  0deg,
-                  transparent,
-                  transparent 29px,
-                  rgba(255, 255, 255, 0.3) 29px,
-                  rgba(255, 255, 255, 0.3) 30px
-                ),
-                repeating-linear-gradient(
-                  90deg,
-                  transparent,
-                  transparent 29px,
-                  rgba(255, 255, 255, 0.3) 29px,
-                  rgba(255, 255, 255, 0.3) 30px
-                );
-            "
-          ></div>
+    <!-- ORÇAMENTO -->
+    <section id="page-orcamento" class="pf-section grid-layout lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div class="bg-gradient-to-r from-primary to-secondary px-7 py-5 text-white">
+          <h2 class="font-display text-2xl font-black tracking-tight">Simulador de Orçamento Têxtil</h2>
+        </div>
+        <div id="skeleton-orcamento" class="p-7 space-y-5"><div class="skeleton h-11 w-full"></div></div>
+        <div id="form-orcamento" class="p-7 space-y-5 hidden">
+          <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 dark:bg-blue-900/20 dark:border-blue-900/40">
+            <p class="text-xs font-bold text-primary uppercase mb-3"><i class="fa-solid fa-user"></i> Seus Dados</p>
+            <div class="grid md:grid-cols-2 gap-3">
+              <input type="text" id="input-cliente-nome" class="pf-input" placeholder="Seu Nome" />
+              <input type="text" id="input-cliente-whats" class="pf-input whats-mask" placeholder="WhatsApp" />
+            </div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="space-y-1.5"><label class="block text-xs font-bold text-gray-500 uppercase">1. Produto</label><select id="sel-produto" class="pf-input font-semibold"></select></div>
+            <div class="space-y-1.5"><label class="block text-xs font-bold text-gray-500 uppercase">2. Cor</label><select id="sel-cor" class="pf-input font-semibold"></select></div>
+          </div>
+          <div class="space-y-1.5">
+            <label class="block text-xs font-bold text-gray-500 uppercase">3. Volume (kg)</label>
+            <select id="sel-quantidade" class="pf-input font-bold text-base"><option value="300">300 KG</option><option value="500">500 KG</option><option value="1000" selected>1.000 KG</option><option value="5000">5.000 KG</option></select>
+          </div>
+          <div class="bg-red-50 border border-red-200 rounded-2xl p-4 dark:bg-red-900/20 dark:border-red-900/40">
+            <p class="text-xs font-bold text-red-700 uppercase mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Avisos Técnicos</p>
+            <p class="text-xs text-red-700 font-medium">Prazo médio: 25 a 45 dias </p> 
+	    <p class="text-xs text-red-700 font-medium">Quebra: 6% a 8%</p>
+          </div>
+        </div>
+      </div>
+      
+      <div id="painel-resultados" class="bg-primary text-white rounded-3xl shadow-xl relative overflow-hidden flex flex-col transition-all">
+        <div class="relative z-10 p-7 flex flex-col h-full gap-6">
+          <h3 class="font-display text-xl font-black border-b border-white/10 pb-4">Projeção Financeira</h3>
+          
+          <!-- INVERSÃO DO DESTAQUE -->
+          <div class="bg-white/10 rounded-2xl p-4 relative overflow-hidden border border-white/20">
+            <span class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1">Valor do Kg Acabado</span>
+            <div id="res-preco-kg" class="result-value font-display text-4xl font-black text-accent drop-shadow-md">R$ 0,00</div>
+          </div>
+          <div class="px-2">
+            <span class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1">Valor Bruto do Lote</span>
+            <div id="res-valor-total" class="result-value font-display text-3xl font-black text-white">R$ 0,00</div>
+          </div>
 
-          <div
-            class="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-secondary/30 blur-2xl"
-          ></div>
-          <div
-            class="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-accent/20 blur-2xl"
-          ></div>
+          <div class="grid grid-cols-2 gap-3 mt-2">
+            <div class="bg-white/5 rounded-xl p-3 border border-white/10"><span class="text-[10px] uppercase font-bold text-blue-200 block mb-1">Sinal (Fio)</span><div id="res-sinal" class="font-bold text-yellow-300">R$ 0,00</div></div>
+            <div class="bg-white/5 rounded-xl p-3 border border-white/10"><span class="text-[10px] uppercase font-bold text-blue-200 block mb-1">Liquidação</span><div id="res-entrega" class="font-bold text-green-400">R$ 0,00</div></div>
+          </div>
+          
+          <div id="res-breakdown" class="text-xs text-blue-200 space-y-1 border-t border-white/10 pt-3 hidden"></div>
 
-          <div class="relative z-10 max-w-3xl mx-auto text-center space-y-5">
-            <span
-              class="inline-block bg-white/10 border border-white/20 text-blue-100 text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full"
-            >
-              Engenharia Têxtil Integrada
-            </span>
-            <h1
-              class="font-display text-4xl md:text-6xl font-black leading-tight"
-            >
-              Excelência em Fornecimento<br class="hidden md:block" />
-              e Industrialização Têxtil
-            </h1>
-            <p
-              class="text-blue-200 text-base md:text-lg max-w-2xl mx-auto leading-relaxed"
-            >
-              A Prime Fios une tecnologia de ponta, matérias-primas
-              rigorosamente selecionadas e engenharia de precisão para entregar
-              as melhores malhas e fios do mercado nacional.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-              <button
-                data-page="orcamento"
-                class="inline-flex items-center justify-center gap-2 bg-accent hover:bg-amber-400 text-white font-bold px-7 py-3 rounded-xl shadow-lg transition-all text-sm"
-              >
-                <i class="fa-solid fa-calculator"></i> Simular Orçamento
-              </button>
-              <button
-                data-page="contato"
-                class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-7 py-3 rounded-xl transition-all text-sm"
-              >
-                <i class="fa-solid fa-envelope"></i> Falar Conosco
-              </button>
+          <div class="space-y-2 mt-auto">
+            <button id="btn-whatsapp" class="w-full bg-emerald-500 hover:bg-emerald-600 font-bold py-3.5 rounded-xl shadow-lg transition-all text-sm"><i class="fa-brands fa-whatsapp mr-1"></i> Formalizar WhatsApp</button>
+            <button id="btn-download-pdf" class="w-full bg-white text-gray-900 border font-bold py-3.5 rounded-xl shadow-md transition-all text-sm"><i class="fa-solid fa-file-pdf text-red-600 mr-1"></i> Baixar Orçamento</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTATO -->
+    <section id="page-contato" class="pf-section max-w-4xl mx-auto">
+      <div class="text-center mb-10"><h2 class="font-display text-4xl font-black text-primary">Canais de Atendimento</h2></div>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-6 shadow-sm">
+          <div class="flex gap-4"><div class="w-11 h-11 bg-blue-50 text-primary rounded-xl flex justify-center items-center"><i class="fa-brands fa-whatsapp text-xl"></i></div><div><p class="text-xs font-bold text-gray-500 uppercase">WhatsApp</p><p id="ct-whatsapp" class="font-semibold"></p></div></div>
+          <div class="flex gap-4"><div class="w-11 h-11 bg-blue-50 text-primary rounded-xl flex justify-center items-center"><i class="fa-solid fa-envelope text-lg"></i></div><div><p class="text-xs font-bold text-gray-500 uppercase">E-mail</p><p id="ct-email" class="font-semibold"></p></div></div>
+          <div class="flex gap-4 hidden" id="ct-insta-wrap"><div class="w-11 h-11 bg-blue-50 text-pink-600 rounded-xl flex justify-center items-center"><i class="fa-brands fa-instagram text-xl"></i></div><div><p class="text-xs font-bold text-gray-500 uppercase">Instagram</p><a id="ct-insta" target="_blank" class="font-semibold hover:text-pink-600"></a></div></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 class="font-display text-2xl font-bold mb-4">Enviar Mensagem</h3>
+          <form id="form-contato" class="space-y-4">
+            <input type="text" id="c-nome" class="pf-input" placeholder="Nome Completo *" required/>
+            <input type="email" id="c-email" class="pf-input" placeholder="E-mail *" required/>
+            <textarea id="c-msg" class="pf-input resize-none" rows="3" placeholder="Sua Mensagem *" required></textarea>
+            <button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors">Enviar</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="page-admin" class="pf-section space-y-6">
+      <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-800 pb-4">
+        <h2 class="font-display text-3xl font-black text-gray-900">Gestão Prime Fios</h2>
+        <button id="btn-logout" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-bold dark:bg-red-900/30 dark:text-red-400"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+      </div>
+      
+      <!-- ABAS OTIMIZADAS -->
+      <div class="flex gap-2 border-b border-gray-200 dark:border-gray-800 pb-0">
+        <button id="tab-btn-config" class="admin-tab-btn px-5 py-2.5 font-bold transition-all border-b-2 text-gray-500 border-transparent" data-tab="config"><i class="fa-solid fa-gear mr-1"></i> Configurações e Preços</button>
+        <button id="tab-btn-producao" class="admin-tab-btn px-5 py-2.5 font-bold transition-all border-b-2 text-primary border-primary bg-white dark:bg-gray-800" data-tab="producao"><i class="fa-solid fa-list-check mr-1"></i> Controle de Produção</button>
+      </div>
+
+      <!-- ABA 1: CONFIGURAÇÕES E PREÇOS -->
+      <div id="admin-tab-config" class="admin-tab-panel hidden space-y-6">
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="space-y-6">
+            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <h3 class="font-bold border-b pb-3 mb-4"><i class="fa-solid fa-at text-gray-400"></i> Redes & Contatos</h3>
+              <form id="form-admin-contatos" class="space-y-3">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase">WhatsApp</label>
+                <input type="text" id="adm-whats" class="pf-input text-sm whats-mask" />
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mt-2">E-mail</label>
+                <input type="email" id="adm-email" class="pf-input text-sm" />
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mt-2 text-pink-500">Instagram URL</label>
+                <input type="url" id="adm-instagram" class="pf-input text-sm border-pink-200 focus:border-pink-500" placeholder="https://instagram.com/sua_marca" />
+                
+                <h3 class="font-bold border-b pb-2 mb-2 mt-6"><i class="fa-solid fa-file-excel text-green-600"></i> API Sheets (Webhooks)</h3>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase">URL Apps Script</label>
+                <input type="url" id="adm-url-sheets" class="pf-input text-sm" placeholder="https://script.google.com/..." />
+                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-600 mt-2">
+                  <input type="checkbox" id="adm-sheet-status" class="rounded w-4 h-4" /> Auto-Sincronizar (Status Changes)
+                </label>
+                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl shadow mt-2">Salvar Configurações</button>
+              </form>
+            </div>
+            
+            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm overflow-hidden">
+                <div class="flex justify-between items-center mb-3"><h3 class="font-bold">Cores</h3><button id="btn-nova-cor" class="bg-primary text-white text-[10px] px-2 py-1 rounded">Add Cor</button></div>
+                <div class="max-h-60 overflow-y-auto">
+                    <table class="w-full text-left text-xs"><tbody id="adm-lista-cores"></tbody></table>
+                </div>
+            </div>
+          </div>
+          
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div class="flex justify-between items-center mb-4"><h3 class="font-bold">Tabela de Produtos (Fios e Malhas)</h3><button id="btn-novo-produto" class="bg-primary text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">Novo Artigo</button></div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[650px]">
+                  <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr><th class="p-3">Artigo</th><th class="p-3">Fio</th><th class="p-3">Tecel.</th><th class="p-3">Tintura.</th><th class="p-3 text-pink-600">Custo Adc.(Piquet)</th><th class="p-3">Frete</th><th class="p-3">Lucro(%)</th><th class="p-3 text-center">Ações</th></tr>
+                  </thead>
+                  <tbody id="adm-lista-produtos"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm h-64 overflow-y-auto hidden" id="adm-audit-wrap">
+               <h3 class="font-bold border-b pb-2 mb-2">Histórico de Eventos (Logs)</h3>
+               <table class="w-full text-left text-xs"><tbody id="adm-lista-audit"></tbody></table>
             </div>
           </div>
         </div>
+      </div>
 
-        <div>
-          <h2
-            class="font-display text-3xl font-black text-primary mb-8 text-center"
-          >
-            Por Que Escolher a Prime Fios?
-          </h2>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div
-              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
-            >
-              <div
-                class="w-11 h-11 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl"
-              >
-                <i class="fa-solid fa-layer-group"></i>
-              </div>
-              <h3 class="font-display text-xl font-bold text-gray-900">
-                Capacidade de Produção
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">
-                Estrutura industrial dimensionada para atender grandes volumes
-                em tecelagem e acabamentos com prazos otimizados.
-              </p>
-            </div>
-            <div
-              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
-            >
-              <div
-                class="w-11 h-11 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl"
-              >
-                <i class="fa-solid fa-droplet"></i>
-              </div>
-              <h3 class="font-display text-xl font-bold text-gray-900">
-                Tinturaria de Alta Performance
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">
-                Fidelidade absoluta de cores com laboratórios automatizados e
-                insumos com certificações de sustentabilidade.
-              </p>
-            </div>
-            <div
-              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
-            >
-              <div
-                class="w-11 h-11 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center text-xl"
-              >
-                <i class="fa-solid fa-shield-halved"></i>
-              </div>
-              <h3 class="font-display text-xl font-bold text-gray-900">
-                Garantia e Rastreabilidade
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">
-                Monitoramento laboratorial desde o fio cru até a expedição final
-                do rolo de malha acabado.
-              </p>
-            </div>
-            <div
-              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
-            >
-              <div
-                class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center text-xl"
-              >
-                <i class="fa-solid fa-clock"></i>
-              </div>
-              <h3 class="font-display text-xl font-bold text-gray-900">
-                Prazo de Fabricação
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">
-                Média de <strong>25 a 45 dias</strong> conforme produto e
-                quantidade.
-              </p>
-            </div>
-            <div
-              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
-            >
-              <div
-                class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center text-xl"
-              >
-                <i class="fa-solid fa-chart-pie"></i>
-              </div>
-              <h3 class="font-display text-xl font-bold text-gray-900">
-                Quebra (Perca)
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">
-                Perdas industriais de <strong>6% a 8%</strong>, dentro do padrão
-                técnico setorial.
-              </p>
-            </div>
-            <div
-              class="pf-card-hover bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm"
-            >
-              <div
-                class="w-11 h-11 bg-primary/10 text-primary rounded-xl flex items-center justify-center text-xl"
-              >
-                <i class="fa-solid fa-handshake"></i>
-              </div>
-              <h3 class="font-display text-xl font-bold text-gray-900">
-                Atendimento Consultivo
-              </h3>
-              <p class="text-gray-500 text-sm leading-relaxed">
-                Nossa equipe técnica orienta em cada etapa, da especificação do
-                fio à escolha do acabamento ideal.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <!-- ABA 2: CONTROLE DE PRODUÇÃO -->
+      <div id="admin-tab-producao" class="admin-tab-panel space-y-6">
+         <!-- Dash KPIs -->
+         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+             <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-center">
+                 <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">Pedidos Ativos</div><div class="text-2xl font-black text-blue-600 font-display" id="dash-ativos">0</div>
+             </div>
+             <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-center">
+                 <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">Prontos</div><div class="text-2xl font-black text-yellow-600 font-display" id="dash-prontos">0</div>
+             </div>
+             <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-center">
+                 <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">Entregues (Mês)</div><div class="text-2xl font-black text-green-600 font-display" id="dash-entregues">0</div>
+             </div>
+             <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-center flex flex-col justify-center gap-2">
+                 <button id="btn-export-full" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2 rounded shadow-sm w-full"><i class="fa-solid fa-cloud-arrow-up"></i> Backup Nuvem</button>
+             </div>
+         </div>
+         
+         <!-- KANBAN -->
+         <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm overflow-x-auto">
+             <h3 class="font-bold text-sm mb-3">Quadro de Fluxo <span class="text-xs font-normal text-gray-400 ml-2">(Arraste os cards para alterar o status)</span></h3>
+             <div class="flex gap-4 min-w-[1400px] h-96 items-start" id="kanban-board">
+                <div class="flex flex-col flex-1 h-full"><div class="bg-gray-100 p-2 font-bold mb-2 rounded text-gray-800 text-xs">Orçamento</div><div id="kb-Orçamento" class="kanban-col flex-1 overflow-y-auto space-y-2 p-2 bg-gray-50/50 rounded" data-status="Orçamento"></div></div>
+                <div class="flex flex-col flex-1 h-full"><div class="bg-red-100 p-2 font-bold mb-2 rounded text-red-800 text-xs">Pagamento Pendente</div><div id="kb-Pagamento-Pendente" class="kanban-col flex-1 overflow-y-auto space-y-2 p-2 bg-red-50/50 rounded" data-status="Pagamento Pendente"></div></div>
+                <div class="flex flex-col flex-1 h-full"><div class="bg-indigo-100 p-2 font-bold mb-2 rounded text-indigo-800 text-xs">Pago</div><div id="kb-Pago" class="kanban-col flex-1 overflow-y-auto space-y-2 p-2 bg-indigo-50/50 rounded" data-status="Pago"></div></div>
+                <div class="flex flex-col flex-1 h-full"><div class="bg-blue-100 p-2 font-bold mb-2 rounded text-blue-800 text-xs">Em Fabricação</div><div id="kb-Em-Fabricação" class="kanban-col flex-1 overflow-y-auto space-y-2 p-2 bg-blue-50/50 rounded" data-status="Em Fabricação"></div></div>
+                <div class="flex flex-col flex-1 h-full"><div class="bg-yellow-100 p-2 font-bold mb-2 rounded text-yellow-800 text-xs">Pronto</div><div id="kb-Pronto" class="kanban-col flex-1 overflow-y-auto space-y-2 p-2 bg-yellow-50/50 rounded" data-status="Pronto"></div></div>
+                <div class="flex flex-col flex-1 h-full"><div class="bg-green-100 p-2 font-bold mb-2 rounded text-green-800 text-xs">Entregue</div><div id="kb-Entregue" class="kanban-col flex-1 overflow-y-auto space-y-2 p-2 bg-green-50/50 rounded" data-status="Entregue"></div></div>
+             </div>
+         </div>
 
-      <section
-        id="page-orcamento"
-        class="pf-section grid-layout lg:grid-cols-3 gap-8"
-      >
-        <div
-          class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden"
-        >
-          <div
-            class="bg-gradient-to-r from-primary to-secondary px-7 py-5 text-white"
-          >
-            <h2 class="font-display text-2xl font-black tracking-tight">
-              Simulador de Orçamento Têxtil
-            </h2>
-            <p class="text-blue-200 text-sm mt-0.5">
-              Configure o lote para obter projeções comerciais automáticas.
-            </p>
-          </div>
-
-          <div id="skeleton-orcamento" class="p-7 space-y-5">
-            <div class="grid md:grid-cols-2 gap-5">
-              <div class="space-y-2">
-                <div class="skeleton h-4 w-32 mb-2"></div>
-                <div class="skeleton h-11 w-full"></div>
-              </div>
-              <div class="space-y-2">
-                <div class="skeleton h-4 w-28 mb-2"></div>
-                <div class="skeleton h-11 w-full"></div>
-              </div>
+         <!-- TABELA LISTA -->
+         <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+               <h3 class="font-bold text-sm">Lista Detalhada</h3>
+               <input type="text" id="filter-search" placeholder="Buscar pedido, cliente..." class="pf-input py-1 px-3 w-64 text-xs" />
             </div>
-            <div class="space-y-2">
-              <div class="skeleton h-4 w-36 mb-2"></div>
-              <div class="skeleton h-11 w-full"></div>
-            </div>
-          </div>
-
-          <div id="form-orcamento" class="p-7 space-y-5 hidden">
-            <div
-              class="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3"
-            >
-              <p
-                class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2"
-              >
-                <i class="fa-solid fa-user text-blue-500"></i> Seus Dados (para
-                contato)
-              </p>
-              <div class="grid md:grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <label
-                    for="input-cliente-nome"
-                    class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
-                    >Seu Nome</label
-                  >
-                  <input
-                    type="text"
-                    id="input-cliente-nome"
-                    class="pf-input"
-                    placeholder="Ex: João da Silva"
-                  />
-                </div>
-                <div class="space-y-1">
-                  <label
-                    for="input-cliente-whats"
-                    class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
-                    >Seu WhatsApp</label
-                  >
-                  <input
-                    type="text"
-                    id="input-cliente-whats"
-                    class="pf-input whats-mask"
-                    placeholder="Ex: (47) 99999-9999"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-5">
-              <div class="space-y-1.5">
-                <label
-                  for="sel-produto"
-                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
-                  >1. Produto / Artigo</label
-                >
-                <select
-                  id="sel-produto"
-                  class="pf-input cursor-pointer font-semibold"
-                ></select>
-              </div>
-
-              <div class="space-y-1.5">
-                <label
-                  for="sel-cor"
-                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
-                  >2. Variante de Cor</label
-                >
-                <select
-                  id="sel-cor"
-                  class="pf-input cursor-pointer font-semibold"
-                ></select>
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label
-                for="sel-quantidade"
-                class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
-                >3. Volume do Pedido (kg)</label
-              >
-              <select
-                id="sel-quantidade"
-                class="pf-input cursor-pointer font-bold text-base"
-              >
-                <option value="300">300 KG</option>
-                <option value="500">500 KG</option>
-                <option value="1000" selected>1.000 KG</option>
-                <option value="2000">2.000 KG</option>
-                <option value="5000">5.000 KG</option>
-              </select>
-            </div>
-
-            <div class="space-y-1.5">
-              <label
-                for="obs-pedido"
-                class="block text-xs font-bold text-gray-600 uppercase tracking-wide"
-              >
-                4. Observações
-                <span class="text-gray-400 font-normal normal-case"
-                  >(opcional)</span
-                >
-              </label>
-              <textarea
-                id="obs-pedido"
-                rows="2"
-                class="pf-input resize-none"
-              ></textarea>
-            </div>
-
-            <div
-              class="bg-red-50 border border-red-200 rounded-2xl p-4 space-y-2.5"
-            >
-              <div class="flex items-start gap-2.5">
-                <i
-                  class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5 flex-shrink-0"
-                ></i>
-                <div class="space-y-1.5">
-                  <p
-                    class="text-xs font-bold text-red-800 uppercase tracking-wide"
-                  >
-                    Avisos Técnicos
-                  </p>
-                  <p class="text-xs text-red-700 font-medium">
-                    • Prazo médio: <strong>25 a 45 dias</strong>
-                  </p>
-                  <p class="text-xs text-red-700 font-medium">
-                    • Quebra (perdas): <strong>6% a 8%</strong>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          id="painel-resultados"
-          class="bg-primary text-white rounded-3xl shadow-xl relative overflow-hidden flex flex-col transition-all duration-300"
-        >
-          <div
-            class="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -mr-10 -mt-10"
-          ></div>
-          <div class="relative z-10 p-7 flex flex-col h-full gap-6">
-            <h3
-              class="font-display text-xl font-black tracking-tight border-b border-white/10 pb-4"
-            >
-              Projeção Financeira
-            </h3>
-            <div>
-              <span
-                class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
-                >Valor do Kg Acabado</span
-              >
-              <div
-                id="res-preco-kg"
-                class="result-value font-display text-3xl font-black text-white"
-              >
-                R$ 0,00
-              </div>
-            </div>
-            <div class="bg-white/10 rounded-2xl p-4">
-              <span
-                class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
-                >Valor Bruto do Lote</span
-              >
-              <div
-                id="res-valor-total"
-                class="result-value font-display text-4xl font-black text-accent"
-              >
-                R$ 0,00
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-white/10 rounded-xl p-3">
-                <span
-                  class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
-                  >Sinal (Fio)</span
-                >
-                <div
-                  id="res-sinal"
-                  class="result-value font-display text-lg font-bold text-yellow-300"
-                >
-                  R$ 0,00
-                </div>
-              </div>
-              <div class="bg-white/10 rounded-xl p-3">
-                <span
-                  class="text-[10px] text-blue-200 uppercase font-bold tracking-widest block mb-1"
-                  >Liquidação</span
-                >
-                <div
-                  id="res-entrega"
-                  class="result-value font-display text-lg font-bold text-green-400"
-                >
-                  R$ 0,00
-                </div>
-              </div>
-            </div>
-            <div
-              id="res-breakdown"
-              class="text-xs text-blue-200 space-y-1 border-t border-white/10 pt-3 hidden"
-            ></div>
-
-            <div class="space-y-2 mt-auto">
-              <button
-                id="btn-whatsapp"
-                class="w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-md"
-              >
-                <i class="fa-brands fa-whatsapp text-lg"></i> Formalizar por
-                WhatsApp
-              </button>
-              <button
-                id="btn-email"
-                class="w-full bg-white/10 hover:bg-white/20 border border-white/20 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all"
-              >
-                <i class="fa-solid fa-envelope"></i> Formalizar por E-mail
-              </button>
-              <button
-                id="btn-download-pdf"
-                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all"
-              >
-                <i class="fa-solid fa-file-pdf text-red-500"></i> Baixar PDF do Orçamento
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-contato" class="pf-section max-w-5xl mx-auto">
-        <div class="text-center mb-10 space-y-2">
-          <h2 class="font-display text-4xl font-black text-primary">
-            Canais de Atendimento
-          </h2>
-          <p class="text-gray-500">
-            Fale diretamente com nosso departamento comercial corporativo.
-          </p>
-        </div>
-        <div class="grid md:grid-cols-2 gap-8">
-          <div class="space-y-5">
-            <div
-              class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
-            >
-              <div class="flex items-start gap-4">
-                <div
-                  class="w-11 h-11 bg-blue-50 text-primary rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                >
-                  <i class="fa-brands fa-whatsapp"></i>
-                </div>
-                <div>
-                  <p
-                    class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1"
-                  >
-                    WhatsApp / Telefone
-                  </p>
-                  <p
-                    id="contato-txt-whats"
-                    class="text-gray-800 font-semibold text-sm"
-                  ></p>
-                </div>
-              </div>
-              <div class="flex items-start gap-4">
-                <div
-                  class="w-11 h-11 bg-blue-50 text-primary rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                >
-                  <i class="fa-solid fa-envelope"></i>
-                </div>
-                <div>
-                  <p
-                    class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1"
-                  >
-                    E-mail Corporativo
-                  </p>
-                  <p
-                    id="contato-txt-email"
-                    class="text-gray-800 font-semibold text-sm"
-                  ></p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="bg-white rounded-2xl border border-gray-100 shadow-sm p-7"
-          >
-            <h3 class="font-display text-2xl font-bold text-gray-900 mb-5">
-              Envie uma Mensagem
-            </h3>
-            <form id="form-contato" class="space-y-4" novalidate>
-              <div>
-                <label
-                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"
-                  >Nome Completo *</label
-                >
-                <input type="text" id="contato-nome" class="pf-input" />
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"
-                  >E-mail *</label
-                >
-                <input type="email" id="contato-email" class="pf-input" />
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-1.5"
-                  >Mensagem *</label
-                >
-                <textarea
-                  id="contato-msg"
-                  class="pf-input resize-none"
-                  rows="4"
-                ></textarea>
-              </div>
-              <button
-                type="submit"
-                id="btn-enviar-contato"
-                class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2 text-sm"
-              >
-                <span id="btn-contato-txt">Enviar Mensagem</span>
-              </button>
-              <div
-                id="contato-success"
-                class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3"
-              >
-                <i class="fa-solid fa-circle-check text-emerald-500"></i>
-                <div>
-                  <p class="text-sm font-bold text-emerald-800">
-                    Mensagem enviada!
-                  </p>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-admin" class="pf-section space-y-8">
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5"
-        >
-          <div>
-            <h2 class="font-display text-3xl font-black text-gray-900">
-              Painel de Configuração
-            </h2>
-            <p
-              id="param-sync-indic"
-              class="text-gray-500 text-xs mt-1 font-bold"
-            >
-              Última sincronização: --
-            </p>
-          </div>
-          <div class="flex gap-2">
-            <button
-              id="btn-logout"
-              class="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold transition-all"
-            >
-              <i class="fa-solid fa-right-from-bracket"></i> Sair
-            </button>
-          </div>
-        </div>
-
-        <div class="flex gap-2 border-b border-gray-200 pb-0 flex-wrap">
-          <button
-            id="tab-btn-dash"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
-            data-tab="dash"
-          >
-            <i class="fa-solid fa-chart-pie"></i> Analytics
-          </button>
-          <button
-            id="tab-btn-producao"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-primary text-primary bg-white flex items-center gap-2"
-            data-tab="producao"
-          >
-            <i class="fa-solid fa-list-check"></i> Controle de Produção
-          </button>
-          <button
-            id="tab-btn-kanban"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
-            data-tab="kanban"
-          >
-            <i class="fa-brands fa-trello"></i> Quadro Kanban
-          </button>
-          <button
-            id="tab-btn-config"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
-            data-tab="config"
-          >
-            <i class="fa-solid fa-gear"></i> Configurações
-          </button>
-          <button
-            id="tab-btn-audit"
-            class="admin-tab-btn px-5 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 border-transparent text-gray-500 bg-transparent hover:text-primary hover:bg-gray-50 flex items-center gap-2"
-            data-tab="audit"
-          >
-            <i class="fa-solid fa-clock-rotate-left"></i> Histórico
-          </button>
-        </div>
-
-        <div id="admin-tab-dash" class="admin-tab-panel hidden space-y-6">
-           <div class="flex items-center justify-between pb-4">
-              <h3 class="font-display text-2xl font-black text-gray-900">Dashboard & Analytics</h3>
-           </div>
-           
-           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
-                 <h4 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Faturamento do Mês</h4>
-                 <div class="text-3xl font-black text-gray-900" id="dash-faturamento">R$ 0,00</div>
-              </div>
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
-                 <h4 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Top Produto (kg)</h4>
-                 <div class="text-2xl font-black text-primary" id="dash-top-produto">-</div>
-              </div>
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
-                 <h4 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Tempo Médio Produção</h4>
-                 <div class="text-3xl font-black text-green-600" id="dash-tempo-medio">0 Dias</div>
-              </div>
-           </div>
-           
-           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
-                 <h4 class="text-sm font-bold text-gray-800 mb-6 font-display">Pedidos por Status</h4>
-                 <canvas id="chart-status" class="w-full" style="max-height:300px;"></canvas>
-              </div>
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full">
-                 <h4 class="text-sm font-bold text-gray-800 mb-6 font-display">Tendência de Vendas (Últimos dias)</h4>
-                 <canvas id="chart-vendas" class="w-full" style="max-height:300px;"></canvas>
-              </div>
-           </div>
-        </div>
-
-        <div id="admin-tab-kanban" class="admin-tab-panel hidden h-[75vh]">
-           <div class="flex items-center justify-between pb-4">
-              <h3 class="font-display text-2xl font-black text-gray-900">Quadro Kanban</h3>
-              <div class="text-xs text-gray-500 font-medium">Arraste os cards para atualizar o status</div>
-           </div>
-           
-           <div class="flex gap-4 overflow-x-auto h-full pb-4 items-start" id="kanban-board">
-              <!-- Columns Biulded Dynamic -->
-              <div class="flex flex-col flex-none w-[300px] h-full">
-                 <div class="bg-gray-100 border border-gray-200 rounded-t-xl p-3 font-bold text-gray-700 text-sm flex justify-between">
-                    Em Fabricação <span class="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-md text-[10px]" id="kb-count-em-fabricacao">0</span>
-                 </div>
-                 <div class="bg-gray-50 border border-t-0 p-2 border-gray-200 rounded-b-xl flex-1 overflow-y-auto space-y-2 kanban-column" data-status="Em Fabricação" id="kb-col-em-fabricacao">
-                 </div>
-              </div>
-              
-              <div class="flex flex-col flex-none w-[300px] h-full">
-                 <div class="bg-yellow-50 border border-yellow-200 rounded-t-xl p-3 font-bold text-yellow-800 text-sm flex justify-between">
-                    Pronto <span class="bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-md text-[10px]" id="kb-count-pronto">0</span>
-                 </div>
-                 <div class="bg-yellow-50/50 border border-t-0 p-2 border-yellow-200 rounded-b-xl flex-1 overflow-y-auto space-y-2 kanban-column" data-status="Pronto" id="kb-col-pronto">
-                 </div>
-              </div>
-              
-              <div class="flex flex-col flex-none w-[300px] h-full">
-                 <div class="bg-green-50 border border-green-200 rounded-t-xl p-3 font-bold text-green-800 text-sm flex justify-between">
-                    Entregue <span class="bg-green-200 text-green-800 px-2 py-0.5 rounded-md text-[10px]" id="kb-count-entregue">0</span>
-                 </div>
-                 <div class="bg-green-50/50 border border-t-0 p-2 border-green-200 rounded-b-xl flex-1 overflow-y-auto space-y-2 kanban-column" data-status="Entregue" id="kb-col-entregue">
-                 </div>
-              </div>
-           </div>
-        </div>
-
-        <div id="admin-tab-audit" class="admin-tab-panel hidden space-y-6">
-           <div class="flex items-center justify-between pb-4">
-              <h3 class="font-display text-2xl font-black text-gray-900">Histórico de Ações (Audit Trail)</h3>
-           </div>
-           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-             <div class="overflow-x-auto max-h-[60vh]">
-               <table class="w-full text-left text-xs min-w-[700px]">
-                 <thead class="sticky top-0 bg-white">
-                   <tr class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200">
-                     <th class="px-5 py-3 w-40">Data/Hora</th>
-                     <th class="px-5 py-3 w-48">Usuário</th>
-                     <th class="px-5 py-3 w-48">Ação</th>
-                     <th class="px-5 py-3">Detalhes</th>
+            <div class="overflow-x-auto">
+               <table class="w-full text-left text-xs min-w-[1000px]">
+                 <thead class="bg-gray-50 border-b border-gray-200">
+                   <tr>
+                     <th class="p-2">ID</th><th class="p-2">Data</th><th class="p-2">Cliente</th><th class="p-2">Produto & Qtd</th><th class="p-2">Valor</th>
+                     <th class="p-2 text-center text-blue-700 bg-blue-50/40">Status Fio</th>
+                     <th class="p-2 text-center text-blue-700 bg-blue-50/40">Tecelagem</th>
+                     <th class="p-2 text-center text-blue-700 bg-blue-50/40">Tinturaria</th>
+                     <th class="p-2 text-center bg-gray-50">Status Final</th>
+                     <th class="p-2 text-center">Export API</th>
                    </tr>
                  </thead>
-                 <tbody id="adm-lista-audit">
-                    <tr><td colspan="4" class="p-6 text-center text-gray-400">Carregando histórico...</td></tr>
-                 </tbody>
+                 <tbody id="producao-lista-pedidos"></tbody>
                </table>
-             </div>
+            </div>
+         </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-gray-900 text-gray-400 text-xs mt-auto">
+    <div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <div class="text-white font-bold font-display text-lg mb-2 tracking-wide"><i class="fa-solid fa-scissors text-accent"></i> PRIME FIOS</div>
+        <p>Especialistas em facção de malhas com qualidade, agilidade e excelência.</p>
+      </div>
+      <div>
+        <h4 class="text-white font-bold mb-3 uppercase">Contato Corporativo</h4>
+        <p><strong>WhatsApp:</strong> <span class="footer-whatsapp">---</span></p>
+        <p><strong>E-mail:</strong> <span class="footer-email">---</span></p>
+        <p class="hidden" id="footer-inst-p"><strong>Instagram:</strong> <a href="#" id="footer-inst" target="_blank" class="hover:text-pink-400 transition-colors"></a></p>
+      </div>
+      <div>
+        <h4 class="text-white font-bold mb-3 uppercase">Atalhos</h4>
+        <div class="flex flex-col gap-2">
+          <button onclick="Navigation.switchPage('orcamento')" class="text-left hover:text-white transition-colors">Simular Orçamento</button>
+          <button onclick="Navigation.switchPage('admin')" class="text-left hover:text-white transition-colors">Acesso Administrativo</button>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 text-center py-4 opacity-70">
+      &copy; 2026 Prime Fios. Todos os direitos reservados. CNPJ: 00.000.000/0001-00
+    </div>
+  </footer>
+
+  <!-- FLOATERS -->
+  <a href="#" id="floating-whatsapp" target="_blank" class="fixed bottom-6 right-6 bg-emerald-500 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg hover:scale-110 transition-transform z-[90] hidden"><i class="fa-brands fa-whatsapp"></i></a>
+  <a href="#" id="floating-instagram" target="_blank" class="fixed bottom-24 right-6 bg-pink-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg hover:scale-110 transition-transform z-[90] hidden"><i class="fa-brands fa-instagram"></i></a>
+
+  <!-- MODALS -->
+  <div id="modal-login" class="pf-modal fixed inset-0 bg-black/70 z-[100] flex items-center justify-center backdrop-blur-sm p-4">
+    <div class="modal-card bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+      <h3 class="font-display text-2xl font-black text-center mb-6">Acesso Privado</h3>
+      <form id="form-login" class="space-y-4">
+        <input type="password" id="input-senha" class="pf-input text-center font-bold text-lg" placeholder="••••••••••" required />
+        <div class="flex gap-2">
+          <button type="button" class="btn-close-modal w-1/2 bg-gray-100 py-3 rounded-xl font-bold">Voltar</button>
+          <button type="submit" class="w-1/2 bg-primary text-white py-3 rounded-xl font-bold">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-produto" class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm p-4">
+    <div class="modal-card bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
+      <h3 class="font-display text-xl font-black mb-4 text-center" id="modal-produto-title">Novo Produto</h3>
+      <form id="form-produto" class="space-y-4">
+        <input type="hidden" id="prod-id" />
+        <input type="text" id="prod-nome" class="pf-input text-sm" placeholder="Nome do Produto (Ex: Meia Malha)" required />
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-[10px] uppercase font-bold text-gray-500">Fio (R$)</label><input type="number" step="0.01" id="prod-fio" class="pf-input text-sm" required /></div>
+          <div><label class="text-[10px] uppercase font-bold text-gray-500">Tecelagem (R$)</label><input type="number" step="0.01" id="prod-tecelagem" class="pf-input text-sm" required /></div>
+          <div><label class="text-[10px] uppercase font-bold text-pink-500">Custo Piquet (R$)</label><input type="number" step="0.01" id="prod-piquet" class="pf-input text-sm border-pink-200" placeholder="0.00" /></div>
+          <div><label class="text-[10px] uppercase font-bold text-gray-500">Frete (R$)</label><input type="number" step="0.01" id="prod-frete" class="pf-input text-sm" required /></div>
+          <div class="col-span-2"><label class="text-[10px] uppercase font-bold text-gray-500">Lucro Geral (%)</label><input type="number" step="1" id="prod-lucro" class="pf-input text-sm" required /></div>
+        </div>
+        <div class="flex gap-2 pt-2">
+          <button type="button" class="btn-close-modal w-1/2 bg-gray-100 py-2.5 rounded-xl font-bold">Cancelar</button>
+          <button type="submit" class="w-1/2 bg-primary text-white py-2.5 rounded-xl font-bold">Salvar Artigo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-cor" class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+    <div class="modal-card bg-white rounded-3xl p-6 max-w-sm w-full">
+      <h3 class="font-display text-xl font-black mb-4 text-center" id="modal-cor-title">Nova Cor</h3>
+      <form id="form-cor" class="space-y-4">
+        <input type="hidden" id="cor-id" />
+        <input type="text" id="cor-nome" class="pf-input text-sm" placeholder="Nome da Cor (Ex: Branco)" required />
+        <input type="number" step="0.01" id="cor-tinturaria" class="pf-input text-sm" placeholder="Custo Tinturaria (R$)" required />
+        <div class="flex gap-2">
+          <button type="button" class="btn-close-modal w-1/2 bg-gray-100 py-2.5 rounded-xl font-bold">Cancelar</button>
+          <button type="submit" class="w-1/2 bg-primary text-white py-2.5 rounded-xl font-bold">Salvar Cor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-confirm" class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+    <div class="modal-card bg-white rounded-3xl p-6 max-w-sm w-full text-center">
+      <h3 class="font-display text-xl font-black mb-2 text-red-600"><i class="fa-solid fa-triangle-exclamation"></i> Atenção</h3>
+      <p class="text-sm font-semibold mb-6" id="confirm-msg">Deseja remover?</p>
+      <div class="flex gap-2">
+        <button type="button" class="btn-close-modal w-1/2 bg-gray-100 py-2 rounded-xl font-bold">Cancelar</button>
+        <button type="button" id="btn-confirm-action" class="w-1/2 bg-red-600 text-white py-2 rounded-xl font-bold">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // REUSABLES & UTILS
+  const qs = (s) => document.querySelector(s);
+  const fid = (id) => document.getElementById(id);
+  const formatBRL = (val) => Number(val||0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  function maskPhone(v) { 
+      v=v.replace(/\D/g,""); if(v.length>11) v=v.slice(0,11); 
+      return v.replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); 
+  }
+  document.addEventListener("input", e => { if(e.target.classList.contains("whats-mask")) e.target.value = maskPhone(e.target.value); });
+  
+  const Toast = { show: (m, t='success') => {
+      const c = fid('toast-container'), el = document.createElement('div');
+      el.className = `toast-in text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-bold ${t==='success'?'bg-emerald-500':t==='error'?'bg-red-500':'bg-amber-500'}`;
+      el.innerHTML = m; c.appendChild(el);
+      setTimeout(() => { el.classList.replace('toast-in','toast-out'); setTimeout(()=>el.remove(),300); }, 3000);
+  }};
+  const Modal = { open: id => fid(id)?.classList.add("open"), close: id => fid(id)?.classList.remove("open") };
+  
+  let confirmCallback = null;
+  const Confirm = { ask: (msg, cb) => { fid('confirm-msg').innerText = msg; confirmCallback = cb; Modal.open('modal-confirm'); }};
+  document.addEventListener('DOMContentLoaded', () => { fid('btn-confirm-action')?.addEventListener('click', () => { if(confirmCallback) confirmCallback(); Modal.close('modal-confirm'); }); });
+
+  // NAVIGATION & UI
+  const Navigation = {
+    switchPage: (tgt) => {
+      if(tgt === 'admin' && !AppState.isAdmin) return Modal.open("modal-login");
+      document.querySelectorAll(".pf-section").forEach(el => el.classList.remove("is-active"));
+      fid(`page-${tgt}`)?.classList.add("is-active");
+      if(tgt === 'admin') Admin.renderAll();
+      fid('mobile-drawer').classList.remove('open'); fid('drawer-backdrop').classList.remove('open');
+    }
+  };
+
+  // APP STATE & FIREBASE DB
+  const FB_CFG = { databaseURL: "https://prime-fios-default-rtdb.firebaseio.com", projectId: "prime-fios" };
+  if(!firebase.apps.length) firebase.initializeApp(FB_CFG);
+  const dbConfig = firebase.database().ref("dadosPrimeFios"), dbPedidos = firebase.database().ref("pedidosPrimeFios");
+
+  const AppState = { 
+     produtos: {}, cores: {}, contatos: {}, pedidos: {}, urlSheets: "", sheetAutoStatus: true,
+     get isAdmin() { return sessionStorage.getItem("pf_adm") === "1"; },
+     setAdmin(v) { v ? sessionStorage.setItem("pf_adm","1") : sessionStorage.removeItem("pf_adm"); }
+  };
+
+  // BUSINESS LOGIC: CALCULATOR & LEADS
+  const Calc = {
+     run: () => {
+         const selProd = fid("sel-produto");
+         const selCor = fid("sel-cor");
+         const p = AppState.produtos?.[selProd?.value];
+         const c = AppState.cores?.[selCor?.value];
+         const qtd = parseFloat(fid("sel-quantidade")?.value) || 0;
+
+         if (!p || !c || !qtd) {
+             fid("res-preco-kg").textContent = formatBRL(0);
+             fid("res-valor-total").textContent = formatBRL(0);
+             fid("res-sinal").textContent = formatBRL(0);
+             fid("res-entrega").textContent = formatBRL(0);
+             fid("res-breakdown")?.classList.add("hidden");
+             return;
+         }
+
+         const toNum = (v) => parseFloat(String(v ?? 0).replace(",", ".")) || 0;
+         const panel = fid("painel-resultados");
+         panel?.classList.add("opacity-50", "scale-[0.98]");
+
+         const pPiquet = toNum(p.piquet);
+         const pKg = toNum(p.fio) + toNum(p.tecelagem) + toNum(c.tinturaria) + toNum(p.frete) + toNum(p.lucro) + pPiquet;
+         const total = pKg * qtd;
+         const sinal = toNum(p.fio) * qtd;
+         const entrega = total - sinal;
+
+         fid("res-preco-kg").textContent = formatBRL(pKg);
+         fid("res-valor-total").textContent = formatBRL(total);
+         fid("res-sinal").textContent = formatBRL(sinal);
+         fid("res-entrega").textContent = formatBRL(entrega);
+
+         const bd = fid("res-breakdown");
+         if (bd) {
+             bd.classList.remove("hidden");
+             bd.innerHTML = `
+               <p class="uppercase text-[9px] font-bold text-white mb-1">Estrutura do KG:</p>
+               <p>Fio: <span class="text-white">${formatBRL(toNum(p.fio))}</span> | Tecelagem: <span class="text-white">${formatBRL(toNum(p.tecelagem))}</span></p>
+               <p>Tinturaria: <span class="text-white">${formatBRL(toNum(c.tinturaria) + toNum(p.lucro))}</span> | Frete: <span class="text-white">${formatBRL(toNum(p.frete))}</span></p>
+               ${pPiquet > 0 ? `<p>Adicional Piquet: <span class="text-white">${formatBRL(pPiquet)}</span></p>` : ""}
+             `;
+         }
+
+         panel?.classList.remove("opacity-50", "scale-[0.98]");
+     },
+
+     dispatchLead: async (way) => {
+         const pNode = fid("sel-produto");
+         const cNode = fid("sel-cor");
+         if (!pNode?.value || !cNode?.value) return Toast.show("Selecione Produto e Cor!", "error");
+
+         Calc.run();
+
+         const num = fid("input-cliente-whats")?.value.trim() || "";
+         const nom = fid("input-cliente-nome")?.value.trim() || "Lead S/N";
+         const prodFull = pNode.options[pNode.selectedIndex].text + " / " + cNode.options[cNode.selectedIndex].text;
+         const qtd = fid("sel-quantidade")?.value || "";
+         const totStr = fid("res-valor-total")?.innerText || formatBRL(0);
+         const vKg = fid("res-preco-kg")?.innerText || formatBRL(0);
+         const sinalStr = fid("res-sinal")?.innerText || formatBRL(0);
+         const entregaStr = fid("res-entrega")?.innerText || formatBRL(0);
+         const pr = new Date();
+         pr.setDate(pr.getDate() + 35);
+
+         try {
+             await dbPedidos.push({
+                 clienteNome: nom,
+                 clienteWhats: num,
+                 produto: prodFull,
+                 quantidade: qtd,
+                 valorTotal: totStr,
+                 data: new Date().toISOString(),
+                 prazoEntrega: pr.toISOString(),
+                 statusFio: "A Comprar",
+                 statusTecelagem: "Aguardando",
+                 statusTinturaria: "Aguardando",
+                 statusFinal: "Orçamento"
+             });
+             Toast.show("Pedido recebido em sistema!", "success");
+         } catch (e) {
+             console.error(e);
+             Toast.show("Erro ao salvar pedido no sistema.", "error");
+         }
+
+         const msg = `*SOLICITAÇÃO DE ORÇAMENTO TÊXTIL*\n\n` +
+           `*Produto:* ${prodFull}\n` +
+           `*Volume:* ${qtd} kg\n` +
+           `*Valor por kg:* ${vKg}\n` +
+           `*Valor total:* ${totStr}\n\n` +
+           `*Condições:*\n` +
+           `• Sinal/Fio: ${sinalStr}\n` +
+           `• Liquidação na entrega: ${entregaStr}\n\n` +
+           `_Prazo médio: 25 a 45 dias._\n` +
+           `_Quebra/percas: 6% a 8%._`;
+
+         if (way === "whatsapp") {
+             const phone = (AppState.contatos?.whatsapp || "").replace(/\D/g, "");
+             window.open(`https://api.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`, "_blank");
+         } else if (way === "email") {
+             const email = AppState.contatos?.email || "contato@empresa.com.br";
+             window.open(`mailto:${email}?subject=${encodeURIComponent("Solicitação de Orçamento Têxtil")}&body=${encodeURIComponent(msg)}`, "_blank");
+         }
+     },
+
+     downloadPDF: async () => {
+         const pNode = fid("sel-produto");
+         const cNode = fid("sel-cor");
+         if (!pNode?.value || !cNode?.value) return Toast.show("Selecione Produto e Cor antes de baixar o PDF.", "error");
+
+         Calc.run();
+
+         const produto = pNode.options[pNode.selectedIndex].text;
+         const cor = cNode.options[cNode.selectedIndex].text;
+         const qtd = fid("sel-quantidade")?.value || "";
+         const nome = fid("input-cliente-nome")?.value.trim() || "Cliente";
+         const whats = fid("input-cliente-whats")?.value.trim() || "-";
+         const valorKg = fid("res-preco-kg")?.innerText || formatBRL(0);
+         const total = fid("res-valor-total")?.innerText || formatBRL(0);
+         const sinal = fid("res-sinal")?.innerText || formatBRL(0);
+         const entrega = fid("res-entrega")?.innerText || formatBRL(0);
+         const breakdown = fid("res-breakdown")?.innerText || "";
+
+         const div = document.createElement("div");
+         div.style.padding = "36px";
+         div.style.background = "#ffffff";
+         div.style.color = "#111827";
+         div.style.fontFamily = "Arial, sans-serif";
+         div.innerHTML = `
+           <div style="border-bottom:2px solid #1e3a8a;padding-bottom:12px;margin-bottom:22px;">
+             <h1 style="margin:0;color:#1e3a8a;font-size:26px;">Prime Fios</h1>
+             <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">Pré-orçamento têxtil - ${new Date().toLocaleDateString("pt-BR")}</p>
            </div>
-        </div>
+           <h2 style="font-size:18px;color:#1e3a8a;margin-bottom:10px;">Dados do cliente</h2>
+           <p><strong>Nome:</strong> ${nome}</p>
+           <p><strong>WhatsApp:</strong> ${whats}</p>
+           <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Detalhes da simulação</h2>
+           <table style="width:100%;border-collapse:collapse;font-size:14px;">
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Produto</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${produto}</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Cor</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${cor}</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Quantidade</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${qtd} kg</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Valor/kg</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${valorKg}</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>${total}</strong></td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Sinal/Fio</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${sinal}</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Liquidação</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${entrega}</td></tr>
+           </table>
+           <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Composição</h2>
+           <pre style="background:#f3f4f6;padding:14px;border-radius:8px;white-space:pre-wrap;font-size:12px;line-height:1.5;">${breakdown}</pre>
+           <p style="margin-top:28px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Quebra/percas: 6% a 8%. Valores sujeitos à confirmação comercial.</p>
+         `;
 
-        <div id="admin-tab-config" class="admin-tab-panel hidden space-y-8">
-          <div class="grid lg:grid-cols-3 gap-8">
-            <div class="space-y-6">
-              <div
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
-              >
-                <h3
-                  class="font-display text-base font-bold text-gray-900 border-b border-gray-100 pb-3"
-                >
-                  Contatos
-                </h3>
-                <form id="form-admin-contatos" class="space-y-4">
-                  <input
-                    type="text"
-                    id="adm-whats"
-                    class="pf-input text-sm whats-mask"
-                    placeholder="WhatsApp"
-                  />
-                  <input
-                    type="email"
-                    id="adm-email"
-                    class="pf-input text-sm"
-                    placeholder="E-mail"
-                  />
-                  <button
-                    type="submit"
-                    class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
-                  >
-                    Salvar
-                  </button>
-                </form>
-              </div>
-
-              <div
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
-              >
-                <h3
-                  class="font-display text-base font-bold text-gray-900 border-b border-gray-100 pb-3"
-                >
-                  Custo Piquet
-                </h3>
-                <form id="form-admin-piquet" class="space-y-4">
-                  <input
-                    type="number"
-                    id="adm-custo-piquet"
-                    class="pf-input text-sm"
-                    placeholder="0.00"
-                    step="0.01"
-                  />
-                  <button
-                    type="submit"
-                    class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
-                  >
-                    Salvar
-                  </button>
-                </form>
-              </div>
-
-              <div
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4"
-              >
-                <h3
-                  class="font-display text-base font-bold text-gray-900 border-b border-gray-100 pb-3"
-                >
-                  <i class="fa-solid fa-file-excel text-green-600"></i>
-                  Integração Sheets
-                </h3>
-                <form id="form-admin-sheets" class="space-y-4">
-                  <input
-                    type="url"
-                    id="adm-url-sheets"
-                    class="pf-input text-sm"
-                    placeholder="URL API (Apps Script)"
-                  />
-                  <div class="space-y-3 pt-1">
-                    <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
-                      <input type="checkbox" id="adm-sheet-lead" class="w-4 h-4 text-primary rounded border-gray-300" />
-                      Auto-exportar orçamentos
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
-                      <input type="checkbox" id="adm-sheet-status" class="w-4 h-4 text-primary rounded border-gray-300" />
-                      Auto-exportar mudança de status
-                    </label>
-                  </div>
-                  <button
-                    type="submit"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all shadow-sm"
-                  >
-                    Salvar Configurações Sheets
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-8">
-              <div
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-              >
-                <div
-                  class="flex items-center justify-between px-6 py-4 border-b border-gray-100"
-                >
-                  <h3 class="font-display text-base font-bold text-gray-900">
-                    Produtos
-                  </h3>
-                  <button
-                    id="btn-novo-produto"
-                    class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg"
-                  >
-                    Novo Artigo
-                  </button>
-                </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left text-xs min-w-[600px]">
-                    <thead>
-                      <tr
-                        class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-100"
-                      >
-                        <th class="px-5 py-3">Artigo</th>
-                        <th class="px-4 py-3">Fio</th>
-                        <th class="px-4 py-3">Tecel.</th>
-                        <th class="px-4 py-3">Frete</th>
-                        <th class="px-4 py-3">Lucro</th>
-                        <th class="px-4 py-3 text-center">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="adm-lista-produtos"></tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div
-                class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-              >
-                <div
-                  class="flex items-center justify-between px-6 py-4 border-b border-gray-100"
-                >
-                  <h3 class="font-display text-base font-bold text-gray-900">
-                    Cores
-                  </h3>
-                  <button
-                    id="btn-nova-cor"
-                    class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg"
-                  >
-                    Nova Cor
-                  </button>
-                </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left text-xs min-w-[380px]">
-                    <thead>
-                      <tr
-                        class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-100"
-                      >
-                        <th class="px-5 py-3">Tonalidade</th>
-                        <th class="px-4 py-3">Tinturaria</th>
-                        <th class="px-4 py-3 text-center">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody id="adm-lista-cores"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="admin-tab-producao" class="admin-tab-panel space-y-6">
-          <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-          >
-            <div>
-              <h3 class="font-display text-2xl font-black text-gray-900">
-                Controle de Produção e Pedidos
-              </h3>
-            </div>
-            <div class="flex items-center gap-3">
-              <button
-                id="btn-export-sheets"
-                class="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
-              >
-                <i class="fa-solid fa-file-excel"></i> Exportar para Google
-                Sheets
-              </button>
-              <div
-                class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold"
-              >
-                <span
-                  class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse inline-block"
-                ></span>
-                Sync Real Time
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4">
-            <div
-              class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center"
-            >
-              <div
-                class="text-3xl font-black text-blue-600 font-display"
-                id="count-fabricacao"
-              >
-                0
-              </div>
-              <div
-                class="text-xs font-bold text-blue-800 uppercase tracking-widest mt-1"
-              >
-                Em Fabricação
-              </div>
-            </div>
-            <div
-              class="bg-green-50 border border-green-100 rounded-xl p-4 text-center"
-            >
-              <div
-                class="text-3xl font-black text-green-600 font-display"
-                id="count-prontos"
-              >
-                0
-              </div>
-              <div
-                class="text-xs font-bold text-green-800 uppercase tracking-widest mt-1"
-              >
-                Prontos
-              </div>
-            </div>
-            <div
-              class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center"
-            >
-              <div
-                class="text-3xl font-black text-emerald-600 font-display"
-                id="count-entregues"
-              >
-                0
-              </div>
-              <div
-                class="text-xs font-bold text-emerald-800 uppercase tracking-widest mt-1"
-              >
-                Entregues
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div>
-                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Buscar</label>
-                <input type="text" id="filter-search" placeholder="Cliente ou Produto..." class="pf-input text-xs py-2 dark:border-gray-700" />
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status Final</label>
-                <select id="filter-status" class="pf-input text-xs py-2 cursor-pointer dark:border-gray-700">
-                    <option value="">Todos</option>
-                    <option value="Em Fabricação">Em Fabricação</option>
-                    <option value="Pronto">Pronto</option>
-                    <option value="Entregue">Entregue</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data Início</label>
-                <input type="date" id="filter-date-start" class="pf-input text-xs py-2 dark:border-gray-700" />
-              </div>
-              <div>
-                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data Fim</label>
-                <input type="date" id="filter-date-end" class="pf-input text-xs py-2 dark:border-gray-700" />
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Classificar por:</span>
-                  <select id="filter-sort" class="pf-input text-xs py-1.5 px-2 w-auto bg-gray-50 cursor-pointer border-gray-200 dark:bg-gray-800 dark:border-gray-700 font-semibold">
-                    <option value="date-desc">Data (Mais Novas)</option>
-                    <option value="date-asc">Data (Mais Antigas)</option>
-                    <option value="val-desc">Valor (Maior para Menor)</option>
-                    <option value="val-asc">Valor (Menor para Maior)</option>
-                  </select>
-              </div>
-              <div class="flex items-center gap-2">
-                  <button id="btn-clear-filters" class="text-xs font-bold text-gray-500 hover:text-primary transition-colors px-3 py-1">Limpar Filtros</button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-          >
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs min-w-[1100px]">
-                <thead>
-                  <tr
-                    class="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200 text-[10px] tracking-wide"
-                  >
-                    <th class="px-4 py-3 whitespace-nowrap">ID Pedido</th>
-                    <th class="px-4 py-3 whitespace-nowrap">Cliente</th>
-                    <th class="px-4 py-3 whitespace-nowrap">Produto</th>
-                    <th class="px-4 py-3 whitespace-nowrap">Qtd (kg)</th>
-                    <th class="px-4 py-3 whitespace-nowrap">Data</th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">
-                      Prazo (Dias Restantes)
-                    </th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">Fio</th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">
-                      Tecelagem
-                    </th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">
-                      Tinturaria
-                    </th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">
-                      Logística
-                    </th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">
-                      Status Final
-                    </th>
-                    <th class="px-4 py-3 whitespace-nowrap text-center">
-                      Ações
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="producao-lista-pedidos"></tbody>
-              </table>
-            </div>
-            
-            <div class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 dark:bg-gray-800/30 px-5 py-3 border-t border-gray-100 dark:border-gray-800 gap-3">
-               <div class="text-[11px] text-gray-500 font-semibold tracking-wider uppercase">
-                  Exibindo <span id="pag-show" class="text-gray-900 dark:text-gray-100 font-bold">0</span> de <span id="pag-total" class="text-gray-900 dark:text-gray-100 font-bold">0</span> pedidos
-               </div>
-               <div class="flex gap-1" id="pag-controls">
-                  <button id="btn-pag-prev" class="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-md text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">Anterior</button>
-                  <div id="pag-numbers" class="flex gap-1 items-center mx-1"></div>
-                  <button id="btn-pag-next" class="px-2 py-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-md text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">Próxima</button>
-               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="bg-gray-900 text-gray-400 text-xs mt-auto">
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 md:grid-cols-3 gap-8"
-      >
-        <div>
-          <div
-            class="flex items-center gap-2 text-white font-bold font-display text-base tracking-wide mb-3"
-          >
-            <i class="fa-solid fa-scissors"></i> PRIME FIOS INDUSTRIAL
-          </div>
-          <p class="mb-2">
-            Especialistas em facção de malhas com qualidade, agilidade e os
-            melhores preços do mercado.
-          </p>
-        </div>
-        <div>
-          <h4
-            class="text-white font-bold mb-3 uppercase tracking-wider text-sm"
-          >
-            Contato
-          </h4>
-          <p class="mb-1">
-            <strong>WhatsApp:</strong> <span class="footer-whatsapp">---</span>
-          </p>
-          <p class="mb-1">
-            <strong>E-mail:</strong> <span class="footer-email">---</span>
-          </p>
-          <p><strong>Horário:</strong> Seg. a Sex. das 08h às 18h</p>
-        </div>
-        <div>
-          <h4
-            class="text-white font-bold mb-3 uppercase tracking-wider text-sm"
-          >
-            Acesso Rápido
-          </h4>
-          <div class="flex flex-col gap-2">
-            <a
-              href="#"
-              class="hover:text-white transition-colors"
-              onclick="Navigation.switchPage('home')"
-              >🏠 Início</a
-            >
-            <a
-              href="#"
-              class="hover:text-white transition-colors"
-              onclick="Navigation.switchPage('orcamento')"
-              >💰 Orçamento Online</a
-            >
-            <a
-              href="#"
-              class="hover:text-white transition-colors"
-              onclick="Navigation.switchPage('admin')"
-              >🔒 Área Restrita</a
-            >
-          </div>
-        </div>
-      </div>
-      <div class="border-t border-gray-800">
-        <div
-          class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-3 opacity-60"
-        >
-          <p>
-            &copy; 2026 Prime Fios. Todos os direitos reservados. CNPJ:
-            00.000.000/0001-00
-          </p>
-        </div>
-      </div>
-    </footer>
-
-    <a
-      href="#"
-      id="floating-whatsapp"
-      target="_blank"
-      class="fixed bottom-6 right-6 bg-emerald-500 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg hover:bg-emerald-600 transition-transform hover:scale-110 z-[90] hidden"
-    >
-      <i class="fa-brands fa-whatsapp"></i>
-    </a>
-
-    <div
-      id="modal-login"
-      class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center backdrop-blur-sm p-4"
-    >
-      <div class="modal-card bg-white rounded-3xl p-8 max-w-sm w-full">
-        <div class="text-center mb-6">
-          <h3 class="font-display text-2xl font-black text-gray-900">
-            Acesso Restrito
-          </h3>
-        </div>
-        <form id="form-login" class="space-y-4">
-          <input
-            type="password"
-            id="input-senha"
-            class="pf-input text-center font-bold text-lg"
-            placeholder="••••••••••"
-            required
-          />
-          <div class="flex gap-3 pt-1">
-            <button
-              type="button"
-              class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 py-3 rounded-xl font-bold transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              id="btn-submit-login"
-              class="w-1/2 bg-primary hover:bg-black text-white py-3 rounded-xl font-bold transition-all"
-            >
-              Acessar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div
-      id="modal-produto"
-      class="pf-modal flex fixed inset-0 bg-black/60 z-[100] items-center justify-center backdrop-blur-sm p-4"
-    >
-      <div
-        class="modal-card bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-md w-full"
-      >
-        <div class="text-center mb-6">
-          <h3
-            class="font-display text-2xl font-black text-gray-900 dark:text-gray-100"
-            id="modal-produto-title"
-          >
-            Novo Produto
-          </h3>
-        </div>
-        <form id="form-produto" class="space-y-4">
-          <input type="hidden" id="prod-id" />
-          <div>
-            <label
-              class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-              >Nome do Produto</label
-            >
-            <input type="text" id="prod-nome" class="pf-input" required />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-                >Fio (R$)</label
-              >
-              <input
-                type="number"
-                step="0.01"
-                id="prod-fio"
-                class="pf-input"
-                required
-              />
-            </div>
-            <div>
-              <label
-                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-                >Tecelagem (R$)</label
-              >
-              <input
-                type="number"
-                step="0.01"
-                id="prod-tecelagem"
-                class="pf-input"
-                required
-              />
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-                >Frete (R$)</label
-              >
-              <input
-                type="number"
-                step="0.01"
-                id="prod-frete"
-                class="pf-input"
-                required
-              />
-            </div>
-            <div>
-              <label
-                class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-                >Lucro (%)</label
-              >
-              <input
-                type="number"
-                step="1"
-                id="prod-lucro"
-                class="pf-input"
-                required
-              />
-            </div>
-          </div>
-          <div class="flex gap-3 pt-3">
-            <button
-              type="button"
-              class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 py-3 rounded-xl font-bold dark:text-gray-300"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="w-1/2 bg-primary hover:bg-blue-900 text-white py-3 rounded-xl font-bold"
-            >
-              Salvar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div
-      id="modal-cor"
-      class="pf-modal flex fixed inset-0 bg-black/60 z-[100] items-center justify-center backdrop-blur-sm p-4"
-    >
-      <div
-        class="modal-card bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-sm w-full"
-      >
-        <div class="text-center mb-6">
-          <h3
-            class="font-display text-2xl font-black text-gray-900 dark:text-gray-100"
-            id="modal-cor-title"
-          >
-            Nova Cor
-          </h3>
-        </div>
-        <form id="form-cor" class="space-y-4">
-          <input type="hidden" id="cor-id" />
-          <div>
-            <label
-              class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-              >Nome da Cor</label
-            >
-            <input type="text" id="cor-nome" class="pf-input" required />
-          </div>
-          <div>
-            <label
-              class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1"
-              >Tinturaria (R$)</label
-            >
-            <input
-              type="number"
-              step="0.01"
-              id="cor-tinturaria"
-              class="pf-input"
-              required
-            />
-          </div>
-          <div class="flex gap-3 pt-3">
-            <button
-              type="button"
-              class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 py-3 rounded-xl font-bold dark:text-gray-300"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="w-1/2 bg-primary hover:bg-blue-900 text-white py-3 rounded-xl font-bold"
-            >
-              Salvar
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div
-      id="modal-confirm"
-      class="pf-modal flex fixed inset-0 bg-black/60 z-[100] items-center justify-center backdrop-blur-sm p-4"
-    >
-      <div class="modal-card bg-white dark:bg-gray-900 rounded-3xl p-8 max-w-sm w-full">
-        <div class="text-center mb-6">
-          <h3 class="font-display text-2xl font-black text-gray-900 dark:text-gray-100">
-            Atenção
-          </h3>
-          <p class="text-gray-600 dark:text-gray-400 mt-2 font-medium" id="modal-confirm-msg">Tem certeza que deseja apagar?</p>
-        </div>
-        <div class="flex gap-3 pt-3">
-          <button type="button" class="btn-close-modal w-1/2 bg-gray-100 dark:bg-gray-800 py-3 rounded-xl font-bold dark:text-gray-300">
-            Cancelar
-          </button>
-          <button type="button" id="btn-confirm-action" class="w-1/2 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold transition-all">
-            Confirmar
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyC77VdzqV7ej9stsdLWZnn0ssfpVLLLpCY",
-        authDomain: "prime-fios.firebaseapp.com",
-        databaseURL: "https://prime-fios-default-rtdb.firebaseio.com",
-        projectId: "prime-fios",
-        storageBucket: "prime-fios.firebasestorage.app",
-        messagingSenderId: "253459161111",
-        appId: "1:253459161111:web:695b252485d29d285afc52",
-        measurementId: "G-GMX6HZE35D",
-      };
-
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      const db = firebase.database();
-      const dbRef = db.ref("dadosPrimeFios");
-      const pedidosRef = db.ref("pedidosPrimeFios");
-      const auditRef = db.ref("auditPrimeFios");
-
-      const Logger = {
-        async log(action, details) {
-          try {
-            await auditRef.push({
-               action,
-               details,
-               user: 'Sistema/Admin',
-               timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-          } catch(e) {
-            console.error("Audit log failed", e);
-          }
-        }
-      };
-
-      const formatBRL = (val) =>
-        Number(val || 0).toLocaleString("pt-BR", {
-          style: "currency",
-          currency: "BRL",
-        });
-
-      function maskPhone(value) {
-        if (!value) return "";
-        value = value.replace(/\D/g, "");
-        if (value.length > 11) value = value.slice(0, 11);
-        value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
-        value = value.replace(/(\d)(\d{4})$/, "$1-$2");
-        return value;
-      }
-
-      document.addEventListener("input", function (e) {
-        if (e.target.classList.contains("whats-mask")) {
-          e.target.value = maskPhone(e.target.value);
-        }
-      });
-
-      const AppState = {
-        produtos: {},
-        cores: {},
-        contatos: { whatsapp: "", email: "" },
-        custoPiquet: 0,
-        senha: "Mortadela123",
-        urlSheets: "",
-        sheetAutoLead: true,
-        sheetAutoStatus: true,
-        hasUnsavedChanges: false,
-        dbReady: false,
-        pedidos: {},
-        get isAdminLogado() {
-          return sessionStorage.getItem("pf_admin_session") === "true";
-        },
-        setAdminLogado(value) {
-          if (value) sessionStorage.setItem("pf_admin_session", "true");
-          else sessionStorage.removeItem("pf_admin_session");
-        },
-        currentPage: "home",
-      };
-
-      function initDarkMode() {
-        const isDark = localStorage.getItem("theme") === "dark";
-        if (isDark) document.documentElement.classList.add("dark");
-
-        document
-          .getElementById("btn-toggle-dark")
-          ?.addEventListener("click", () => {
-            document.documentElement.classList.toggle("dark");
-            const darkActive =
-              document.documentElement.classList.contains("dark");
-            localStorage.setItem("theme", darkActive ? "dark" : "light");
-          });
-      }
-
-      const Toast = (() => {
-        function show(message, type = "success", duration = 3500) {
-          const container = document.getElementById("toast-container");
-          const bg =
-            type === "success"
-              ? "bg-emerald-500"
-              : type === "error"
-                ? "bg-red-500"
-                : "bg-secondary";
-          const el = document.createElement("div");
-          el.className = `${bg} text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-semibold toast-in`;
-          el.innerHTML = `<span>${message}</span>`;
-          container.appendChild(el);
-          setTimeout(() => {
-            el.classList.remove("toast-in");
-            el.classList.add("toast-out");
-            setTimeout(() => el.remove(), 300);
-          }, duration);
-        }
-        return { show };
-      })();
-
-      const Modal = (() => {
-        function open(id) {
-          document.getElementById(id)?.classList.add("open");
-        }
-        function close(id) {
-          document.getElementById(id)?.classList.remove("open");
-        }
-        return { open, close };
-      })();
-
-      const CustomConfirm = (() => {
-        let confirmAction = null;
-        function show(msg, action) {
-          const msgEl = document.getElementById('modal-confirm-msg');
-          if (msgEl) msgEl.textContent = msg;
-          confirmAction = action;
-          Modal.open('modal-confirm');
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-          document.getElementById('btn-confirm-action')?.addEventListener('click', () => {
-            if (confirmAction) confirmAction();
-            Modal.close('modal-confirm');
-          });
-        });
-        return { show };
-      })();
-
-      const Navigation = {
-        switchPage(target) {
-          if (target === "admin" && !AppState.isAdminLogado)
-            return Modal.open("modal-login");
-          ["home", "orcamento", "contato", "admin"].forEach((p) => {
-            const el = document.getElementById(`page-${p}`);
-            if (el) el.classList.remove("is-active");
-          });
-          document.getElementById(`page-${target}`)?.classList.add("is-active");
-          AppState.currentPage = target;
-          if (target === "admin") {
-            Renderer.renderAdminPanel();
-            Renderer.renderAnalytics();
-            Renderer.renderKanban();
-          }
-        },
-      };
-
-      const DataStore = (() => {
-        let _dbTimeoutHandle = setTimeout(() => {
-          if (!AppState.dbReady)
-            document.getElementById("banner-db-error")?.classList.add("show");
-        }, 8000);
-
-        function initSync() {
-          dbRef.on("value", (snapshot) => {
-            const data = snapshot.val();
-            clearTimeout(_dbTimeoutHandle);
-            AppState.dbReady = true;
-            document
-              .getElementById("banner-db-error")
-              ?.classList.remove("show");
-
-            const syncEl = document.getElementById("param-sync-indic");
-            if (syncEl)
-              syncEl.textContent =
-                "Última sincronização: " +
-                new Date().toLocaleTimeString("pt-BR");
-
-            if (data) {
-              AppState.produtos = data.produtos || {};
-              AppState.cores = data.cores || {};
-              AppState.contatos = data.contatos || {};
-              AppState.custoPiquet = parseFloat(data.custoPiquet) || 0;
-              AppState.senha = data.senha || "Mortadela123";
-              AppState.urlSheets = data.urlSheets || "";
-              AppState.sheetAutoLead = data.sheetAutoLead !== false;
-              AppState.sheetAutoStatus = data.sheetAutoStatus !== false;
-              Renderer.updateAll();
-            }
-          });
-
-          pedidosRef.on("value", (snapshot) => {
-            AppState.pedidos = snapshot.val() || {};
-            if (AppState.isAdminLogado) {
-               Renderer.renderProducaoTable();
-               Renderer.renderAnalytics();
-               Renderer.renderKanban();
-            }
-          });
-        }
-
-        async function save(origem = "Admin") {
-          try {
-            await dbRef.update({
-              produtos: (AppState.produtos && Object.keys(AppState.produtos).length > 0) ? AppState.produtos : null,
-              cores: (AppState.cores && Object.keys(AppState.cores).length > 0) ? AppState.cores : null,
-              contatos: AppState.contatos || null,
-              custoPiquet: AppState.custoPiquet || 0,
-              senha: AppState.senha || "Mortadela123",
-              urlSheets: AppState.urlSheets || "",
-              sheetAutoLead: AppState.sheetAutoLead,
-              sheetAutoStatus: AppState.sheetAutoStatus,
-            });
-            AppState.hasUnsavedChanges = false;
-            Toast.show("Alterações salvas com sucesso!", "success");
-            Logger.log("Configurações Salvas", `Nova config salva via ${origem}`);
-          } catch (err) {
-            Toast.show("Erro ao salvar.", "error");
-          }
-        }
-
-        async function updatePedidoStatus(pedidoId, campo, valor) {
-          await pedidosRef.child(pedidoId).update({ [campo]: valor });
-          Logger.log("Atualizou Status", `Pedido ${pedidoId} - Campo ${campo} - Novo Valor: ${valor}`);
-        }
-        return { initSync, save, updatePedidoStatus };
-      })();
-
-      const Calculator = (() => {
-        let timer = null;
-        function runAndRender() {
-          const selProd = document.getElementById("sel-produto");
-          const selCor = document.getElementById("sel-cor");
-          const p = AppState.produtos[selProd?.value];
-          const c = AppState.cores[selCor?.value];
-          const qtd =
-            parseFloat(document.getElementById("sel-quantidade")?.value) || 0;
-          if (!p || !c || !qtd) return;
-
-          const panel = document.getElementById("painel-resultados");
-          if (panel) {
-            panel.classList.add("opacity-50", "scale-[0.98]");
-          }
-
-          clearTimeout(timer);
-          timer = setTimeout(() => {
-            const isPiquet = /piquet/i.test(p.nome);
-            const extra = isPiquet ? parseFloat(AppState.custoPiquet) : 0;
-            const pKg =
-              parseFloat(p.fio) +
-              parseFloat(p.tecelagem) +
-              parseFloat(c.tinturaria) +
-              parseFloat(p.frete) +
-              parseFloat(p.lucro) +
-              extra;
-            const total = pKg * qtd;
-            const sinal = parseFloat(p.fio) * qtd;
-
-            document.getElementById("res-preco-kg").textContent =
-              formatBRL(pKg);
-            document.getElementById("res-valor-total").textContent =
-              formatBRL(total);
-            document.getElementById("res-sinal").textContent = formatBRL(sinal);
-            document.getElementById("res-entrega").textContent = formatBRL(
-              total - sinal,
-            );
-
-            const bd = document.getElementById("res-breakdown");
-            if (bd) {
-              const formatBRLAux = formatBRL;
-              bd.classList.remove("hidden");
-              let piqLine = "";
-              if (isPiquet && extra > 0) {
-                piqLine = `<p>Gola/Punho Piquet: <span class="text-white">${formatBRLAux(extra)}</span></p>`;
-              }
-              bd.innerHTML = `
-                  <p class="font-bold text-blue-300 mb-1 uppercase tracking-wide text-[10px]">Composição do Kg:</p>
-                  <p>Fio: <span class="text-white">${formatBRLAux(p.fio)}</span>
-                     &nbsp;|&nbsp; Tecel.: <span class="text-white">${formatBRLAux(p.tecelagem)}</span></p>
-                  <p>Tinturaria: <span class="text-white">${formatBRLAux(parseFloat(c.tinturaria) + parseFloat(p.lucro))}</span>
-                     &nbsp;|&nbsp; Frete: <span class="text-white">${formatBRLAux(p.frete)}</span></p>
-                  ${piqLine}
-              `;
-            }
-
-            if (panel) {
-              panel.classList.remove("opacity-50", "scale-[0.98]");
-            }
-          }, 350);
-        }
-
-        async function downloadPDF() {
-          const selProd = document.getElementById("sel-produto");
-          const selCor = document.getElementById("sel-cor");
-          const qtd = document.getElementById("sel-quantidade")?.value;
-          const prazoHTML = document.getElementById("res-prazo")?.textContent;
-          const valorHTML = document.getElementById("res-total")?.textContent;
-          const breakdown = document.getElementById("res-breakdown")?.innerText;
-
-          if (!selProd.value || !selCor.value || !qtd)
-            return Toast.show("Orçamento incompleto", "warning");
-
-          const pNode = selProd.options[selProd.selectedIndex].text;
-          const cNode = selCor.options[selCor.selectedIndex].text;
-
-          // Build a temporary container
-          const div = document.createElement('div');
-          div.style.padding = '40px';
-          div.style.background = '#ffffff';
-          div.style.color = '#000000';
-          div.style.fontFamily = 'Arial, sans-serif';
-          div.innerHTML = `
-             <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
-                <h1 style="margin:0; font-size: 24px; font-weight: bold; color: #1e3a8a;">Prime Fios</h1>
-                <p style="margin:5px 0 0 0; color: #6b7280; font-size: 12px;">Orçamento Oficial - ${new Date().toLocaleDateString('pt-BR')}</p>
-             </div>
-             
-             <div style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 10px; font-size: 16px; color: #1e3a8a;">Detalhes da Simulação</h3>
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Produto:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${pNode}</td></tr>
-                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Tonalidade:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${cNode}</td></tr>
-                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Quantidade:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${qtd} kg</td></tr>
-                   <tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Prazo Estimado:</td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${prazoHTML}</td></tr>
-                </table>
-             </div>
-             
-             <div style="margin-bottom: 30px;">
-                <h3 style="margin-bottom: 10px; font-size: 16px; color: #1e3a8a;">Detalhamento de Custos</h3>
-                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; white-space: pre-wrap;">
-${breakdown}
-                </div>
-             </div>
-             
-             <div style="text-align: right; margin-top: 20px;">
-                <p style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Valor Total Estimado</p>
-                <div style="font-size: 28px; font-weight: bold; color: #10b981;">${valorHTML}</div>
-             </div>
-             
-             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center;">
-                <p>Validade da proposta: 7 dias corridos.</p>
-                <p>O prazo de entrega começa a contar a partir da confirmação do sinal.</p>
-             </div>
-          `;
-          
-          Toast.show("Gerando PDF, aguarde...", "info");
-          
-          const opt = {
-             margin:       10,
-             filename:     `Orcamento_${pNode.substring(0, 10)}_${new Date().getTime()}.pdf`,
-             image:        { type: 'jpeg', quality: 0.98 },
-             html2canvas:  { scale: 2 },
-             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          };
-          
-          try {
-             await html2pdf().set(opt).from(div).save();
-             Toast.show("Download concluído!", "success");
-          } catch(e) {
+         try {
+             Toast.show("Gerando PDF...", "success");
+             await html2pdf().set({
+                 margin: 10,
+                 filename: `Orcamento_Prime_Fios_${Date.now()}.pdf`,
+                 image: { type: "jpeg", quality: 0.98 },
+                 html2canvas: { scale: 2 },
+                 jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+             }).from(div).save();
+             Toast.show("PDF gerado com sucesso!", "success");
+         } catch (e) {
              console.error(e);
              Toast.show("Erro ao gerar PDF.", "error");
-          }
-        }
+         }
+     }
+  };
 
-        function dispatchLead(channel) {
-          if (!AppState.dbReady)
-            return Toast.show("Aguarde os dados...", "warning");
-          const selProd = document.getElementById("sel-produto");
-          const selCor = document.getElementById("sel-cor");
-          const qtd = document.getElementById("sel-quantidade")?.value;
-          const clienteNome = document
-            .getElementById("input-cliente-nome")
-            ?.value.trim();
-          const clienteWhats = document
-            .getElementById("input-cliente-whats")
-            ?.value.trim();
-          const product = selProd.options[selProd.selectedIndex].text;
-          const color = selCor.options[selCor.selectedIndex].text;
-          const pKgStr = document.getElementById("res-preco-kg").textContent;
-          const totalStr =
-            document.getElementById("res-valor-total").textContent;
-          const sinalStr = document.getElementById("res-sinal").textContent;
-          const entregaStr = document.getElementById("res-entrega").textContent;
+  // RENDER UI UPDATE
+  const UI = {
+     buildFeatures: () => {
+         const f = [
+            {i:'fa-layer-group text-blue-500', t:'Alta Capacidade', d:'Tecelagem industrial em larga escala'},
+            {i:'fa-droplet text-blue-500', t:'Cores Fiéis', d:'Laboratório tintureiro padronizado'},
+            {i:'fa-shield-halved text-blue-500', t:'Rastreabilidade', d:'Qualidade 100% monitorada'},
+            {i:'fa-clock text-accent', t:'Prazo Otimizado', d:'Média de 25 a 45 dias úteis de entrega'},
+            {i:'fa-chart-pie text-accent', t:'Controle de Perdas', d:'Fator de quebra retido entre 6% e 8%'},
+            {i:'fa-handshake text-primary', t:'B2B Integrado', d:'Consultoria de Engenharia ponta a ponta'}
+         ];
+         const fl = fid('features-list'); if(fl) fl.innerHTML = f.map(x=>`<div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm pf-card-hover"><div class="w-11 h-11 bg-gray-50 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid ${x.i}"></i></div><h3 class="font-bold text-lg mb-2">${x.t}</h3><p class="text-sm text-gray-500 leading-relaxed">${x.d}</p></div>`).join('');
+     },
+     syncConfig: () => {
+         const selP = fid("sel-produto"), selC = fid("sel-cor");
+         const produtos = Object.entries(AppState.produtos || {});
+         const cores = Object.entries(AppState.cores || {});
 
-          if (!selProd?.value || !selCor?.value)
-            return Toast.show("Preencha os campos", "warning");
+         if (selP) {
+             selP.innerHTML = `<option disabled selected value="">Artigo / Malha</option>` +
+                 produtos.map(([id, p]) => `<option value="${id}">${p.nome}</option>`).join("");
+         }
+         if (selC) {
+             selC.innerHTML = `<option disabled selected value="">Tinturaria / Cor</option>` +
+                 cores.map(([id, c]) => `<option value="${id}">${c.nome}</option>`).join("");
+         }
 
-          const prazoE = new Date();
-          prazoE.setDate(prazoE.getDate() + 35);
+         // ESSENCIAL: libera o formulário do simulador após carregar produtos/cores
+         fid("skeleton-orcamento")?.classList.add("hidden");
+         fid("form-orcamento")?.classList.remove("hidden");
 
-          pedidosRef
-            .push({
-              clienteNome: clienteNome || "Novo Lead",
-              clienteWhats: clienteWhats || "",
-              produto: product + " / " + color,
-              quantidade: qtd,
-              valorTotal: totalStr,
-              data: new Date().toISOString(),
-              prazoEntrega: prazoE.toISOString(),
-              statusFio: "A Comprar",
-              statusTecelagem: "Aguardando Fio",
-              statusTinturaria: "Aguardando Lote",
-              statusLogistica: "Aguardando Coleta",
-              statusFinal: "Em Fabricação",
-            })
-            .then((docRef) => {
-              Toast.show("Pedido auto-registrado na produção!", "success");
-              if (AppState.urlSheets && AppState.sheetAutoLead) {
-                const payload = {
-                  action: "NEW_LEAD",
-                  id: docRef.key,
-                  clienteNome: clienteNome || "Novo Lead",
-                  clienteWhats: clienteWhats || "",
-                  produto: product + " / " + color,
-                  quantidade: qtd,
-                  valorTotal: totalStr,
-                  data: new Date().toISOString()
-                };
-                fetch(AppState.urlSheets, {
-                  method: "POST",
-                  mode: "no-cors",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(payload),
-                }).catch(err => console.error(err));
-              }
-            })
-            .catch((err) => console.error(err));
+         if (selP?.value && selC?.value) Calc.run();
+         else Calc.run();
+         
+         const ct = AppState.contatos;
+         fid("ct-whatsapp").innerText = ct.whatsapp || "..."; fid("ct-email").innerText = ct.email || "...";
+         document.querySelectorAll('.footer-whatsapp').forEach(x=>x.innerText=ct.whatsapp||"-");
+         document.querySelectorAll('.footer-email').forEach(x=>x.innerText=ct.email||"-");
+         
+         // Regra 1: Injetar Instagram Dinamicamente Header, Footer e Floater
+         const inst = ct.instagram;
+         if(inst) {
+            fid("hdr-insta")?.setAttribute("href", inst); fid("hdr-insta")?.classList.replace("hidden","md:flex");
+            fid("ct-insta-wrap")?.classList.remove("hidden"); fid("ct-insta")?.setAttribute("href", inst); fid("ct-insta").innerText = "@" + inst.split("/").pop();
+            fid("footer-inst-p")?.classList.remove("hidden"); fid("footer-inst")?.setAttribute("href", inst); fid("footer-inst").innerText = "@" + inst.split("/").pop();
+            fid("floating-instagram")?.classList.remove("hidden"); fid("floating-instagram")?.setAttribute("href", inst);
+         } else {
+            fid("hdr-insta")?.classList.replace("md:flex","hidden"); fid("floating-instagram")?.classList.add("hidden"); fid("footer-inst-p")?.classList.add("hidden"); fid("ct-insta-wrap")?.classList.add("hidden");
+         }
+         
+         if(ct.whatsapp) {
+             const cleanW = ct.whatsapp.replace(/\D/g,"");
+             fid("floating-whatsapp")?.setAttribute("href", `https://api.whatsapp.com/send?phone=55${cleanW}`);
+             fid("floating-whatsapp")?.classList.remove("hidden");
+         }
+     }
+  };
 
-          const msg = `*SOLICITAÇÃO DE ORÇAMENTO TÊXTIL*
---------------------------------------------------
-*Produto:* ${product}
-*Quantidade:* ${qtd} kg
-*Cor Escolhida:* ${color}
-
-*VALORES DO ORÇAMENTO:*
-• *Preço por kg:* ${pKgStr}
-• VALOR TOTAL: ${totalStr}
-
-*CONDIÇÕES DE PAGAMENTO:*
-• *Passo 1 (Sinal):* ${sinalStr}
-  _(Inicialmente somente a matéria-prima - Fio)_
-• *Passo 2 (Entrega):* ${entregaStr}
-  _(Após terminar toda a produção da malha)_
-
---------------------------------------------------
-_*Atenção: Prazo médio de fabricação de 25 a 45 dias*._
-_*Atenção: Variação de quebra (percas) de 6% a 8%*._`;
-
-          let phone = AppState.contatos.whatsapp.replace(/\D/g, "");
-          if (channel === "whatsapp") {
-            window.open(
-              `https://api.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`,
-              "_blank",
-            );
-          } else if (channel === "email") {
-            const emailAddr =
-              AppState.contatos.email || "contato@empresa.com.br";
-            window.open(
-              `mailto:${emailAddr}?subject=${encodeURIComponent("Solicitação de Orçamento Têxtil")}&body=${encodeURIComponent(msg)}`,
-              "_blank",
-            );
-          }
-
-          const elNome = document.getElementById("input-cliente-nome");
-          if (elNome) elNome.value = "";
-          const elWhats = document.getElementById("input-cliente-whats");
-          if (elWhats) elWhats.value = "";
-        }
-        return { runAndRender, dispatchLead, downloadPDF };
-      })();
-
-      const Renderer = (() => {
-        function updateAll() {
-          const selProd = document.getElementById("sel-produto");
-          const selCor = document.getElementById("sel-cor");
-
-          if (selProd) {
-            selProd.innerHTML =
-              '<option value="" disabled selected>Escolha o Artigo…</option>';
-            Object.entries(AppState.produtos).forEach(
-              ([id, p]) =>
-                (selProd.innerHTML += `<option value="${id}">${p.nome}</option>`),
-            );
-          }
-          if (selCor) {
-            selCor.innerHTML =
-              '<option value="" disabled selected>Escolha a Tonalidade…</option>';
-            Object.entries(AppState.cores).forEach(
-              ([id, c]) =>
-                (selCor.innerHTML += `<option value="${id}">${c.nome}</option>`),
-            );
-          }
-
-          document
-            .getElementById("skeleton-orcamento")
-            ?.classList.add("hidden");
-          document.getElementById("form-orcamento")?.classList.remove("hidden");
-
-          document.getElementById("contato-txt-whats").textContent =
-            AppState.contatos.whatsapp || "---";
-          document.getElementById("contato-txt-email").textContent =
-            AppState.contatos.email || "---";
-
-          document
-            .querySelectorAll(".footer-whatsapp")
-            .forEach(
-              (el) => (el.textContent = AppState.contatos.whatsapp || "---"),
-            );
-          document
-            .querySelectorAll(".footer-email")
-            .forEach(
-              (el) => (el.textContent = AppState.contatos.email || "---"),
-            );
-
-          if (AppState.contatos.whatsapp) {
-            const phoneStr = AppState.contatos.whatsapp.replace(/\D/g, "");
-            document
-              .getElementById("floating-whatsapp")
-              ?.setAttribute(
-                "href",
-                `https://api.whatsapp.com/send?phone=55${phoneStr}`,
-              );
-            document
-              .getElementById("floating-whatsapp")
-              ?.classList.remove("hidden");
-          }
-
-          if (AppState.isAdminLogado) {
-             renderAdminPanel();
-             renderAnalytics();
-             renderKanban();
-          }
-        }
-
-        function renderAdminPanel() {
-          document.getElementById("adm-whats").value =
-            AppState.contatos.whatsapp || "";
-          document.getElementById("adm-email").value =
-            AppState.contatos.email || "";
-          document.getElementById("adm-custo-piquet").value =
-            AppState.custoPiquet || 0;
-          document.getElementById("adm-url-sheets").value =
-            AppState.urlSheets || "";
-          document.getElementById("adm-sheet-lead").checked = AppState.sheetAutoLead;
-          document.getElementById("adm-sheet-status").checked = AppState.sheetAutoStatus;
-
-          document.getElementById("adm-lista-produtos").innerHTML =
-            Object.entries(AppState.produtos)
-              .map(
-                ([id, p]) => `
-            <tr class="adm-tr border-b border-gray-100 last:border-0 transition-colors">
-                <td class="px-5 py-3 font-semibold text-gray-800 dark:text-gray-200">${p.nome}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(p.fio)}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(p.tecelagem)}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(p.frete)}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${Number(p.lucro || 0)}%</td>
-                <td class="px-4 py-3 text-center">
-                    <button class="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50" onclick="Admin.deleteProduto('${id}')" title="Excluir"><i class="fa-solid fa-trash text-xs"></i></button>
-                    <button class="bg-blue-50 text-blue-500 hover:bg-blue-100 p-1.5 rounded ml-1 dark:bg-blue-900/30 dark:hover:bg-blue-900/50" onclick="Admin.editProduto('${id}')" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
-                </td>
-            </tr>
-        `,
-              )
-              .join("");
-
-          document.getElementById("adm-lista-cores").innerHTML = Object.entries(
-            AppState.cores,
-          )
-            .map(
-              ([id, c]) => `
-            <tr class="adm-tr border-b border-gray-100 last:border-0 transition-colors">
-                <td class="px-5 py-3 font-semibold text-gray-800 dark:text-gray-200">${c.nome}</td>
-                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">${formatBRL(c.tinturaria)}</td>
-                <td class="px-4 py-3 text-center">
-                    <button class="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50" onclick="Admin.deleteCor('${id}')" title="Excluir"><i class="fa-solid fa-trash text-xs"></i></button>
-                    <button class="bg-blue-50 text-blue-500 hover:bg-blue-100 p-1.5 rounded ml-1 dark:bg-blue-900/30 dark:hover:bg-blue-900/50" onclick="Admin.editCor('${id}')" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
-                </td>
-            </tr>
-        `,
-            )
-            .join("");
-
-          renderProducaoTable();
-        }
-
-        let filterState = { search: "", status: "", dateStart: "", dateEnd: "", sort: "date-desc", page: 1, limit: 15 };
-
-        function initFilters() {
-            const bind = (id, ev, cb) => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener(ev, cb);
-            };
-            
-            bind('filter-search', 'input', e => { filterState.search = e.target.value.toLowerCase(); filterState.page = 1; renderProducaoTable(); });
-            bind('filter-status', 'change', e => { filterState.status = e.target.value; filterState.page = 1; renderProducaoTable(); });
-            bind('filter-date-start', 'change', e => { filterState.dateStart = e.target.value; filterState.page = 1; renderProducaoTable(); });
-            bind('filter-date-end', 'change', e => { filterState.dateEnd = e.target.value; filterState.page = 1; renderProducaoTable(); });
-            bind('filter-sort', 'change', e => { filterState.sort = e.target.value; filterState.page = 1; renderProducaoTable(); });
-            
-            bind('btn-clear-filters', 'click', () => {
-               const ids = ['filter-search', 'filter-status', 'filter-date-start', 'filter-date-end'];
-               ids.forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ""; });
-               if(document.getElementById('filter-sort')) document.getElementById('filter-sort').value = "date-desc";
-               filterState = { search: "", status: "", dateStart: "", dateEnd: "", sort: "date-desc", page: 1, limit: 15 };
-               renderProducaoTable();
-            });
-            
-            bind('btn-pag-prev', 'click', () => { if(filterState.page > 1) { filterState.page--; renderProducaoTable(); } });
-            bind('btn-pag-next', 'click', () => { filterState.page++; renderProducaoTable(); });
-        }
-
-        function renderProducaoTable() {
-          const tbody = document.getElementById("producao-lista-pedidos");
-          if (!tbody) return;
-          let entries = Object.entries(AppState.pedidos);
-
-          let fabCount = 0, prontoCount = 0, entrCount = 0;
-          entries.forEach(([id, pedido]) => {
-              if (pedido.statusFinal === "Em Fabricação") fabCount++;
-              else if (pedido.statusFinal === "Pronto") prontoCount++;
-              else if (pedido.statusFinal === "Entregue") entrCount++;
-          });
-
-          if(filterState.status) {
-              entries = entries.filter(([id, p]) => p.statusFinal === filterState.status);
-          }
-          if(filterState.search) {
-              entries = entries.filter(([id, p]) => 
-                  (p.clienteNome && p.clienteNome.toLowerCase().includes(filterState.search)) || 
-                  (p.produto && p.produto.toLowerCase().includes(filterState.search)) ||
-                  id.toLowerCase().includes(filterState.search)
-              );
-          }
-          if(filterState.dateStart) {
-              const ds = new Date(filterState.dateStart).getTime();
-              entries = entries.filter(([id, p]) => new Date(p.data).getTime() >= ds);
-          }
-          if(filterState.dateEnd) {
-              const de = new Date(filterState.dateEnd).getTime();
-              // Adiciona 1 dia para incluir toda a data fim até as 23:59
-              entries = entries.filter(([id, p]) => new Date(p.data).getTime() <= de + 86400000);
-          }
-
-          entries.sort((a, b) => {
-              // Converte string BRL 'R$ 1.200,00' para float 1200.00
-              const parseVal = (str) => {
-                 if(!str) return 0;
-                 return parseFloat(str.replace(/[R$\s\.]/g, '').replace(',', '.'));
-              };
-              const vA = parseVal(a[1].valorTotal);
-              const vB = parseVal(b[1].valorTotal);
-              const dA = new Date(a[1].data).getTime();
-              const dB = new Date(b[1].data).getTime();
-              
-              if(filterState.sort === 'val-desc') return vB - vA;
-              if(filterState.sort === 'val-asc') return vA - vB;
-              if(filterState.sort === 'date-asc') return dA - dB;
-              return dB - dA;
-          });
-
-          const total = entries.length;
-          const totalPages = Math.ceil(total / filterState.limit) || 1;
-          if (filterState.page > totalPages) filterState.page = totalPages;
-          if (filterState.page < 1) filterState.page = 1;
-          
-          const start = (filterState.page - 1) * filterState.limit;
-          const end = start + filterState.limit;
-          const paged = entries.slice(start, end);
-
-          tbody.innerHTML = paged
-            .map(([id, pedido]) => {
-              const selects = [
-                { c: "statusFio", o: ["A Comprar", "Comprado", "Em Estoque"] },
-                {
-                  c: "statusTecelagem",
-                  o: ["Aguardando Fio", "Em Produção", "Concluído"],
-                },
-                {
-                  c: "statusTinturaria",
-                  o: ["Aguardando Lote", "Em Processo", "Concluído"],
-                },
-                {
-                  c: "statusLogistica",
-                  o: [
-                    "Aguardando Coleta",
-                    "Em Trânsito",
-                    "Disponível para Retirada",
-                  ],
-                },
-                {
-                  c: "statusFinal",
-                  o: ["Em Fabricação", "Pronto", "Entregue"],
-                },
-              ]
-                .map((def) => {
-                  const val = pedido[def.c] || def.o[0];
-                  return `<td class="p-1"><select class="status-select p-1 bg-gray-50 border-gray-300 w-full producao-status-select dark:bg-gray-700" data-f="${def.c}" data-i="${id}">
-                   ${def.o.map((opt) => `<option value="${opt}" ${opt === val ? "selected" : ""}>${opt}</option>`).join("")}
-                </select></td>`;
-                })
-                .join("");
-
-              let htmlPrazo = "-";
-              if (pedido.prazoEntrega) {
-                const diff =
-                  (new Date(pedido.prazoEntrega) - new Date()) /
-                  (1000 * 3600 * 24);
-                const d = Math.ceil(diff);
-                const badge =
-                  d > 5
-                    ? "bg-green-100 text-green-700"
-                    : d >= 2
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-red-100 text-red-700";
-                const dataStr = new Date(
-                  pedido.prazoEntrega,
-                ).toLocaleDateString("pt-BR", { timeZone: "UTC" }); // Corrige offset
-                htmlPrazo = `<span class="px-2 py-1 ${badge} rounded-md text-[10px] font-bold whitespace-nowrap">${dataStr} (${d}d)</span>`;
-              }
-
-              return `<tr class="adm-tr border-b border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <td class="p-2 text-[10px] uppercase font-mono text-gray-500">${id.substring(1, 8)}</td>
-                <td class="p-2 font-bold text-[11px] text-gray-900 dark:text-gray-100">${pedido.clienteNome || "-"}</td>
-                <td class="p-2 text-[11px] font-medium text-gray-700 dark:text-gray-300">${pedido.produto || "-"}</td>
-                <td class="p-2 text-[11px] font-mono text-gray-600 dark:text-gray-400">${pedido.quantidade || "-"}kg <br/><span class="text-green-600 font-bold">${pedido.valorTotal || "-"}</span></td>
-                <td class="p-2 text-[10px] text-gray-500 whitespace-nowrap text-center">${new Date(pedido.data).toLocaleDateString("pt-BR")}</td>
-                <td class="p-2 text-center items-center align-middle">${htmlPrazo}</td>
-                ${selects}
-                <td class="p-2 text-center align-middle">
-                  <button class="bg-red-50 text-red-500 hover:bg-red-100 w-7 h-7 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50 flex items-center justify-center mx-auto" onclick="Admin.deletePedido('${id}')" title="Excluir"><i class="fa-solid fa-trash text-[10px]"></i></button>
-                </td>
-            </tr>`;
-            })
-            .join("");
-
-          if (paged.length === 0) {
-             tbody.innerHTML = `<tr><td colspan="12" class="py-12 text-center text-gray-400 font-medium text-sm">Nenhum pedido encontrado com os filtros atuais.</td></tr>`;
-          }
-
-          const setTxt = (id, val) => {
-            if (document.getElementById(id))
-              document.getElementById(id).textContent = val;
-          };
-          setTxt("count-fabricacao", fabCount);
-          setTxt("count-prontos", prontoCount);
-          setTxt("count-entregues", entrCount);
-          
-          setTxt("pag-total", total);
-          setTxt("pag-show", total > 0 ? `${start + 1} - ${Math.min(end, total)}` : "0");
-
-          const btnPrev = document.getElementById("btn-pag-prev");
-          const btnNext = document.getElementById("btn-pag-next");
-          if(btnPrev) btnPrev.disabled = filterState.page <= 1;
-          if(btnNext) btnNext.disabled = filterState.page >= totalPages || total === 0;
-
-          const pageContainer = document.getElementById("pag-numbers");
-          if(pageContainer) {
-              let nums = "";
-              for(let i = 1; i <= totalPages; i++) {
-                 if (i === 1 || i === totalPages || (i >= filterState.page - 1 && i <= filterState.page + 1)) {
-                    nums += `<button class="px-2 py-0.5 mx-0.5 rounded text-[10px] font-bold transition-colors ${i === filterState.page ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}" onclick="Renderer.goToPage(${i})">${i}</button>`;
-                 } else if (i === filterState.page - 2 || i === filterState.page + 2) {
-                    nums += `<span class="px-1 text-gray-400 text-xs">...</span>`;
-                 }
-              }
-              pageContainer.innerHTML = nums;
-          }
-        }
-        
-        function goToPage(p) {
-            filterState.page = p;
-            renderProducaoTable();
-        }
-
-        let chartStatusInst = null, chartVendasInst = null;
-        function renderAnalytics() {
-            const entries = Object.values(AppState.pedidos);
-            const numFab = entries.filter(p => p.statusFinal === 'Em Fabricação').length;
-            const numPronto = entries.filter(p => p.statusFinal === 'Pronto').length;
-            const numEntregue = entries.filter(p => p.statusFinal === 'Entregue').length;
-
-            const now = new Date();
-            let fatM = 0;
-            const prodStats = {};
-            let tmSum = 0, tmCount = 0;
-
-            const seteDiasStr = [...Array(7)].map((_,i) => {
-               const d = new Date(); d.setDate(today.getDate() - (6-i));
-               return `${d.getDate()}/${d.getMonth()+1}`;
-            });
-            const today = new Date();
-            const last7Ops = Array(7).fill(0);
-
-            entries.forEach(p => {
-               const pD = new Date(p.data);
-               // Faturamento mes
-               if(pD.getMonth() === now.getMonth() && pD.getFullYear() === now.getFullYear()) {
-                   fatM += parseFloat(String(p.valorTotal).replace(/[R$\s\.]/g, '').replace(',', '.')) || 0;
-               }
-               // Top Produto
-               if(p.produto) {
-                   const nomeP = p.produto.split(' / ')[0];
-                   prodStats[nomeP] = (prodStats[nomeP] || 0) + parseFloat(p.quantidade || 0);
-               }
-               // Tempo Medio (criacao ate agora, se em fabricacao, ou ate prazo)
-               if(p.statusFinal === 'Entregue') {
-                   // Aprox: assumed that data changes status to entregue
-                   // Just simulate a timeline check if not 100% accurate without full trail
-                   const diff = (new Date(p.prazoEntrega).getTime() - pD.getTime()) / (1000*3600*24);
-                   if (diff > 0) { tmSum += diff; tmCount++; }
-               }
-               
-               // Tendencias 7 dias
-               const dIndex = 6 - Math.floor((today.getTime() - pD.getTime()) / (1000*3600*24));
-               if (dIndex >= 0 && dIndex < 7) {
-                   last7Ops[dIndex]++;
-               }
-            });
-
-            document.getElementById('dash-faturamento').textContent = formatBRL(fatM);
-            const topProdObj = Object.entries(prodStats).sort((a,b)=>b[1]-a[1])[0];
-            document.getElementById('dash-top-produto').innerHTML = topProdObj ? `${topProdObj[0]} <span class="text-sm font-medium text-gray-500">(${topProdObj[1]}kg)</span>` : '-';
-            document.getElementById('dash-tempo-medio').textContent = tmCount ? Math.round(tmSum/tmCount) + ' Dias' : 'N/D';
-
-            // Render Charts
-            if(!window.Chart) return;
-            
-            if(chartStatusInst) chartStatusInst.destroy();
-            chartStatusInst = new Chart(document.getElementById('chart-status'), {
-               type: 'doughnut',
-               data: {
-                  labels: ['Em Fabricação', 'Pronto', 'Entregue'],
-                  datasets: [{
-                     data: [numFab, numPronto, numEntregue],
-                     backgroundColor: ['#3b82f6', '#eab308', '#22c55e']
-                  }]
-               },
-               options: { plugins: { legend: { position: 'bottom' } } }
-            });
-
-            if(chartVendasInst) chartVendasInst.destroy();
-            chartVendasInst = new Chart(document.getElementById('chart-vendas'), {
-               type: 'bar',
-               data: {
-                  labels: seteDiasStr,
-                  datasets: [{
-                     label: 'Pedidos',
-                     data: last7Ops,
-                     backgroundColor: '#111827',
-                     borderRadius: 4
-                  }]
-               },
-               options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-            });
-        }
-        
-        function renderKanban() {
-            const cols = {
-               'Em Fabricação': document.getElementById('kb-col-em-fabricacao'),
-               'Pronto': document.getElementById('kb-col-pronto'),
-               'Entregue': document.getElementById('kb-col-entregue'),
-            };
-            if(!cols['Em Fabricação']) return;
-            
-            Object.values(cols).forEach(c => c.innerHTML = '');
-            
-            let countF = 0, countP = 0, countE = 0;
-            Object.entries(AppState.pedidos).forEach(([id, p]) => {
-                const c = p.statusFinal || 'Em Fabricação';
-                if(c === 'Em Fabricação') countF++;
-                else if (c === 'Pronto') countP++;
-                else if (c === 'Entregue') countE++;
-                else return; // unmapped
-                
-                const card = document.createElement('div');
-                card.draggable = true;
-                card.className = "bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing text-xs hover:border-primary transition-colors";
-                card.dataset.id = id;
-                card.addEventListener('dragstart', e => {
-                   e.dataTransfer.setData('text/plain', id);
-                   card.classList.add('opacity-50');
-                });
-                card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
-                
-                card.innerHTML = `
-                   <div class="flex justify-between items-center mb-2">
-                      <span class="font-mono text-[9px] text-gray-500 uppercase">${id.substring(1, 8)}</span>
-                      <span class="font-bold text-green-600">${p.valorTotal}</span>
-                   </div>
-                   <div class="font-bold text-gray-900">${p.clienteNome || 'S/N'}</div>
-                   <div class="text-gray-600 truncate mt-1">${p.produto}</div>
-                   <div class="text-[10px] text-gray-400 mt-2 flex justify-between">
-                      <span>${p.quantidade}kg</span>
-                      <span>${new Date(p.data).toLocaleDateString('pt-BR')}</span>
-                   </div>
-                `;
-                cols[c].appendChild(card);
-            });
-            
-            document.getElementById('kb-count-em-fabricacao').textContent = countF;
-            document.getElementById('kb-count-pronto').textContent = countP;
-            document.getElementById('kb-count-entregue').textContent = countE;
-        }
-
-        // Kanban Drag events
-        document.addEventListener('DOMContentLoaded', () => {
-           document.querySelectorAll('.kanban-column').forEach(col => {
-               col.addEventListener('dragover', e => {
-                   e.preventDefault();
-                   col.classList.add('bg-gray-200/50', 'border-dashed', 'border-gray-400');
-               });
-               col.addEventListener('dragleave', () => {
-                   col.classList.remove('bg-gray-200/50', 'border-dashed', 'border-gray-400');
-               });
-               col.addEventListener('drop', e => {
-                   e.preventDefault();
-                   col.classList.remove('bg-gray-200/50', 'border-dashed', 'border-gray-400');
-                   const id = e.dataTransfer.getData('text/plain');
-                   const status = col.dataset.status;
-                   if (id && status) {
-                       DataStore.updatePedidoStatus(id, 'statusFinal', status);
-                   }
-               });
-           });
-           
-           auditRef.orderByChild('timestamp').limitToLast(50).on('value', snap => {
-              const tb = document.getElementById('adm-lista-audit');
-              if(!tb) return;
-              const data = snap.val();
-              if(!data) { tb.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">Nenhum evento registrado.</td></tr>`; return; }
-              const arr = Object.values(data).sort((a,b) => b.timestamp - a.timestamp);
-              tb.innerHTML = arr.map(h => `
-                 <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td class="px-5 py-3 text-gray-500 font-mono text-[10px] whitespace-nowrap">${new Date(h.timestamp).toLocaleString('pt-BR')}</td>
-                    <td class="px-5 py-3 font-bold text-gray-700 clamp-1">${h.user}</td>
-                    <td class="px-5 py-3 text-gray-900 font-medium">${h.action}</td>
-                    <td class="px-5 py-3 text-gray-500">${h.details}</td>
-                 </tr>
-              `).join('');
+  // ADMIN OPERATIONS
+  const Admin = {
+     init: () => {
+        // Tab system
+        document.querySelectorAll(".admin-tab-btn").forEach(btn => {
+           btn.addEventListener("click", () => {
+              document.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("border-primary", "text-primary", "bg-white", "dark:bg-gray-800"));
+              btn.classList.add("border-primary", "text-primary", "bg-white", "dark:bg-gray-800");
+              document.querySelectorAll(".admin-tab-panel").forEach(p => p.classList.add("hidden"));
+              fid(`admin-tab-${btn.dataset.tab}`).classList.remove("hidden");
            });
         });
-
-        return { updateAll, renderAdminPanel, renderProducaoTable, initFilters, goToPage, renderAnalytics, renderKanban };
-      })();
-
-      const Admin = (() => {
-        function init() {
-          document.querySelectorAll(".admin-tab-btn").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              document
-                .querySelectorAll(".admin-tab-btn")
-                .forEach((b) =>
-                  b.classList.remove("border-primary", "text-primary"),
-                );
-              btn.classList.add("border-primary", "text-primary");
-              document
-                .querySelectorAll(".admin-tab-panel")
-                .forEach((p) => p.classList.add("hidden"));
-              document
-                .getElementById(`admin-tab-${btn.dataset.tab}`)
-                .classList.remove("hidden");
-            });
-          });
-
-          ["form-admin-contatos", "form-admin-piquet"].forEach((id) => {
-            document.getElementById(id)?.addEventListener("submit", (e) => {
-              e.preventDefault();
-              AppState.contatos.whatsapp =
-                document.getElementById("adm-whats").value;
-              AppState.contatos.email =
-                document.getElementById("adm-email").value;
-              AppState.custoPiquet =
-                document.getElementById("adm-custo-piquet").value;
-              DataStore.save();
-            });
-          });
-
-          document
-            .getElementById("form-admin-sheets")
-            ?.addEventListener("submit", (e) => {
-              e.preventDefault();
-              AppState.urlSheets =
-                document.getElementById("adm-url-sheets").value;
-              AppState.sheetAutoLead = document.getElementById("adm-sheet-lead").checked;
-              AppState.sheetAutoStatus = document.getElementById("adm-sheet-status").checked;
-              DataStore.save();
-            });
-
-          document
-            .getElementById("btn-export-sheets")
-            ?.addEventListener("click", async () => {
-              if (!AppState.urlSheets)
-                return Toast.show(
-                  "Configure a URL da API na aba Configurações primeiro!",
-                  "warning",
-                );
-
-              Toast.show("Iniciando Backup Geral...", "info");
-              const dataToExport = {
-                action: "FULL_BACKUP",
-                pedidos: AppState.pedidos || {},
-                produtos: AppState.produtos || {},
-                cores: AppState.cores || {},
-                contatos: AppState.contatos || {}
-              };
-
-              try {
-                await fetch(AppState.urlSheets, {
-                  method: "POST",
-                  mode: "no-cors",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(dataToExport),
-                });
-                Toast.show(
-                  "Comando de Backup Enviado com sucesso!",
-                  "success",
-                );
-              } catch (err) {
-                Toast.show("Erro na comunicação.", "error");
-              }
-            });
-
-          document
-            .getElementById("form-login")
-            ?.addEventListener("submit", (e) => {
-              e.preventDefault();
-              if (
-                document.getElementById("input-senha").value === AppState.senha
-              ) {
-                AppState.setAdminLogado(true);
-                Modal.close("modal-login");
-                Navigation.switchPage("admin");
-              } else {
-                Toast.show("Senha incorreta", "error");
-              }
-            });
-
-          document
-            .getElementById("btn-logout")
-            ?.addEventListener("click", () => {
-              AppState.setAdminLogado(false);
-              Navigation.switchPage("home");
-            });
-
-          document.addEventListener("change", (e) => {
-            if (e.target.classList.contains("producao-status-select")) {
-              DataStore.updatePedidoStatus(
-                e.target.dataset.i,
-                e.target.dataset.f,
-                e.target.value,
-              );
-              
-              if (AppState.urlSheets && AppState.sheetAutoStatus) {
-                const payload = {
-                  action: "UPDATE_STATUS",
-                  id: e.target.dataset.i,
-                  campo: e.target.dataset.f,
-                  valor: e.target.value
-                };
-                fetch(AppState.urlSheets, {
-                  method: "POST",
-                  mode: "no-cors",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(payload),
-                }).catch(err => console.error(err));
-              }
-            }
-          });
-
-          let searchTimeout;
-          if (document.getElementById("btn-clear-filters") && !document.getElementById("btn-clear-filters").dataset.bound) {
-             document.getElementById("btn-clear-filters").dataset.bound = "true";
-             Renderer.initFilters();
-          }
-
-          document.addEventListener("input", (e) => {
-            if (AppState.isAdminLogado && e.target.closest("form"))
-              AppState.hasUnsavedChanges = true;
-          });
-          window.addEventListener("beforeunload", (e) => {
-            if (AppState.hasUnsavedChanges) {
-              e.preventDefault();
-              e.returnValue = "";
-            }
-          });
-        }
-
-        async function deletePedido(id) {
-          CustomConfirm.show("Tem certeza que deseja apagar este pedido?", async () => {
-            try {
-              document.body.style.cursor = 'wait';
-              await pedidosRef.child(id).remove();
-              Toast.show("Pedido apagado com sucesso!", "success");
-            } catch (error) {
-              console.error(error);
-              Toast.show("Erro ao apagar pedido!", "error");
-            } finally {
-              document.body.style.cursor = 'default';
-            }
-          });
-        }
-
-        async function deleteProduto(id) {
-          CustomConfirm.show("Tem certeza que deseja apagar este produto?", async () => {
-            try {
-              document.body.style.cursor = 'wait';
-              delete AppState.produtos[id];
-              await DataStore.save();
-              Renderer.updateAll();
-              Toast.show("Produto apagado com sucesso!", "success");
-            } catch(e) {
-              Toast.show("Erro ao apagar produto!", "error");
-            } finally {
-              document.body.style.cursor = 'default';
-            }
-          });
-        }
-                      
-        function createProduto() {
-          document.getElementById("modal-produto-title").textContent =
-            "Novo Produto";
-          document.getElementById("prod-id").value = "";
-          document.getElementById("form-produto").reset();
-          Modal.open("modal-produto");
-        }
-
-        function editProduto(id) {
-          const p = AppState.produtos[id];
-          if (!p) return;
-          document.getElementById("modal-produto-title").textContent =
-            "Editar Produto";
-          document.getElementById("prod-id").value = id;
-          document.getElementById("prod-nome").value = p.nome;
-          document.getElementById("prod-fio").value = p.fio;
-          document.getElementById("prod-tecelagem").value = p.tecelagem;
-          document.getElementById("prod-frete").value = p.frete;
-          document.getElementById("prod-lucro").value = p.lucro;
-          Modal.open("modal-produto");
-        }
-
-        async function deleteCor(id) {
-          CustomConfirm.show("Tem certeza que deseja apagar esta cor?", async () => {
-            try {
-              document.body.style.cursor = 'wait';
-              delete AppState.cores[id];
-              await DataStore.save();
-              Renderer.updateAll();
-              Toast.show("Cor apagada com sucesso!", "success");
-            } catch(e) {
-              Toast.show("Erro ao apagar cor!", "error");
-            } finally {
-              document.body.style.cursor = 'default';
-            }
-          });
-        }
-
-        function createCor() {
-          document.getElementById("modal-cor-title").textContent = "Nova Cor";
-          document.getElementById("cor-id").value = "";
-          document.getElementById("form-cor").reset();
-          Modal.open("modal-cor");
-        }
-
-        function editCor(id) {
-          const c = AppState.cores[id];
-          if (!c) return;
-          document.getElementById("modal-cor-title").textContent = "Editar Cor";
-          document.getElementById("cor-id").value = id;
-          document.getElementById("cor-nome").value = c.nome;
-          document.getElementById("cor-tinturaria").value = c.tinturaria;
-          Modal.open("modal-cor");
-        }
-
-        document
-          .getElementById("form-produto")
-          ?.addEventListener("submit", (e) => {
-            e.preventDefault();
-            const id =
-              document.getElementById("prod-id").value || "p" + Date.now();
-            AppState.produtos[id] = {
-              nome: document.getElementById("prod-nome").value,
-              fio: parseFloat(document.getElementById("prod-fio").value) || 0,
-              tecelagem:
-                parseFloat(document.getElementById("prod-tecelagem").value) ||
-                0,
-              frete:
-                parseFloat(document.getElementById("prod-frete").value) || 0,
-              lucro:
-                parseFloat(document.getElementById("prod-lucro").value) || 0,
-            };
-            DataStore.save();
-            Renderer.updateAll();
-            Modal.close("modal-produto");
-            Toast.show("Produto salvo com sucesso!", "success");
-          });
-
-        document.getElementById("form-cor")?.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const id =
-            document.getElementById("cor-id").value || "c" + Date.now();
-          AppState.cores[id] = {
-            nome: document.getElementById("cor-nome").value,
-            tinturaria:
-              parseFloat(document.getElementById("cor-tinturaria").value) || 0,
-          };
-          DataStore.save();
-          Renderer.updateAll();
-          Modal.close("modal-cor");
-          Toast.show("Cor salva com sucesso!", "success");
+        
+        // Forms setup
+        fid("form-admin-contatos").addEventListener("submit", async e => {
+           e.preventDefault();
+           await dbConfig.update({
+               contatos: { whatsapp: fid("adm-whats").value, email: fid("adm-email").value, instagram: fid("adm-instagram").value },
+               urlSheets: fid("adm-url-sheets").value, sheetAutoStatus: fid("adm-sheet-status").checked
+           }); Toast.show("Salvo!");
+        });
+        
+        fid("form-produto").addEventListener("submit", async e => {
+           e.preventDefault(); const id = fid("prod-id").value || "p"+Date.now();
+           await dbConfig.child(`produtos/${id}`).set({ 
+               nome: fid("prod-nome").value, fio: fid("prod-fio").value, tecelagem: fid("prod-tecelagem").value, 
+               piquet: fid("prod-piquet").value||0, frete: fid("prod-frete").value, lucro: fid("prod-lucro").value 
+           }); Modal.close("modal-produto"); Toast.show("Artigo Salvo");
         });
 
-        document
-          .getElementById("btn-novo-produto")
-          ?.addEventListener("click", createProduto);
-        document
-          .getElementById("btn-nova-cor")
-          ?.addEventListener("click", createCor);
-
-        return {
-          init,
-          deletePedido,
-          deleteProduto,
-          createProduto,
-          editProduto,
-          deleteCor,
-          createCor,
-          editCor,
-        };
-      })();
-
-      window.Admin = Admin;
-
-      const ContatoForm = (() => {
-        function init() {
-          const form = document.getElementById("form-contato");
-          const btnTxt = document.getElementById("btn-contato-txt");
-          const btnEl = document.getElementById("btn-enviar-contato");
-          const success = document.getElementById("contato-success");
-
-          form?.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const nomeInput = document.getElementById("contato-nome");
-            const emailInput = document.getElementById("contato-email");
-            const msgInput = document.getElementById("contato-msg");
-
-            const nome = nomeInput?.value?.trim() || "";
-            const email = emailInput?.value?.trim() || "";
-            const msg = msgInput?.value?.trim() || "";
-
-            if (
-              nome.length < 3 ||
-              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-              msg.length < 10
-            ) {
-              Toast.show(
-                "Preencha todos os campos corretamente antes de enviar.",
-                "warning",
-              );
-              return;
-            }
-
-            if (btnTxt) btnTxt.textContent = "Enviando…";
-            if (btnEl) btnEl.disabled = true;
-
-            await new Promise((r) => setTimeout(r, 1000));
-
-            form.reset();
-
-            if (success) success.classList.remove("hidden");
-            if (btnTxt) btnTxt.textContent = "Enviar Mensagem";
-            if (btnEl) btnEl.disabled = false;
-
-            Toast.show("Mensagem enviada com sucesso!", "success");
-            setTimeout(() => success?.classList.add("hidden"), 5000);
-          });
-        }
-
-        return { init };
-      })();
-
-      document.addEventListener("DOMContentLoaded", () => {
-        initDarkMode();
-
-        // Mobile drawer setup
-        const drawer = document.getElementById("mobile-drawer");
-        const backdrop = document.getElementById("drawer-backdrop");
-
-        function closeDrawer() {
-          drawer?.classList.remove("open");
-          backdrop?.classList.remove("open");
-        }
-
-        document
-          .getElementById("btn-open-drawer")
-          ?.addEventListener("click", () => {
-            drawer?.classList.add("open");
-            backdrop?.classList.add("open");
-          });
-          
-        document
-          .getElementById("btn-close-drawer")
-          ?.addEventListener("click", closeDrawer);
-          
-        backdrop?.addEventListener("click", closeDrawer);
-
-        document.addEventListener("click", (e) => {
-          const btn = e.target.closest("[data-page]");
-          if (btn) {
-            Navigation.switchPage(btn.dataset.page);
-            if (btn.closest("#mobile-drawer")) {
-              closeDrawer();
-            }
-          }
-          if (e.target.closest(".btn-close-modal")) {
-            Modal.close(e.target.closest(".pf-modal").id);
-          }
+        fid("form-cor").addEventListener("submit", async e => {
+           e.preventDefault(); const id = fid("cor-id").value || "c"+Date.now();
+           await dbConfig.child(`cores/${id}`).set({ nome: fid("cor-nome").value, tinturaria: fid("cor-tinturaria").value });
+           Modal.close("modal-cor"); Toast.show("Cor Salva");
         });
 
-        document
-          .getElementById("sel-produto")
-          ?.addEventListener("change", Calculator.runAndRender);
-        document
-          .getElementById("sel-cor")
-          ?.addEventListener("change", Calculator.runAndRender);
-        document
-          .getElementById("sel-quantidade")
-          ?.addEventListener("change", Calculator.runAndRender);
+        fid("filter-search")?.addEventListener("input", Admin.renderProducao);
+     },
+     exportLeadSheet: async (id) => {
+         // Regra 3: Exportação Manual Exclusiva
+         const p = AppState.pedidos[id];
+         if(!p || !AppState.urlSheets) return Toast.show("Erro: URL do Apps Script não configurada!","error");
+         
+         document.body.style.cursor = 'wait'; Toast.show("Exportando lead para a Planilha...");
+         try {
+             await fetch(AppState.urlSheets, { method: "POST", mode: "no-cors", headers: {"Content-Type": "application/json"},
+                 body: JSON.stringify({ action: "NEW_LEAD", id, ...p }) });
+             Toast.show("Exportado com sucesso!");
+         } catch(e) { Toast.show("Falha de rede ao exportar.","error"); }
+         finally { document.body.style.cursor = 'default'; }
+     },
+     changeStatus: async (id, param, val) => {
+         await dbPedidos.child(id).update({ [param]: val });
+         if(AppState.urlSheets && AppState.sheetAutoStatus && param==='statusFinal') {
+             fetch(AppState.urlSheets, { method:"POST", mode:"no-cors", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"UPDATE_STATUS",id,campo:param,valor:val})}).catch(console.error);
+         }
+     },
+     renderAll: () => {
+         // Contatos
+         fid("adm-whats").value = AppState.contatos.whatsapp||""; fid("adm-email").value = AppState.contatos.email||""; fid("adm-instagram").value = AppState.contatos.instagram||"";
+         fid("adm-url-sheets").value = AppState.urlSheets||""; fid("adm-sheet-status").checked = AppState.sheetAutoStatus;
+         
+         // Produtos & Cores Table
+         fid("adm-lista-produtos").innerHTML = Object.entries(AppState.produtos).map(([id,p])=>`
+            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${p.nome}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${Number(p.lucro||0)}%</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${p.lucro}%</td>
+            <td class="p-3 text-center"><button onclick="Admin.editP('${id}')" class="text-blue-500 mr-2"><i class="fa-solid fa-pen"></i></button><button onclick="Confirm.ask('Apagar produto?', ()=>dbConfig.child('produtos/${id}').remove())" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>
+         `).join("");
+         
+         fid("adm-lista-cores").innerHTML = Object.entries(AppState.cores).map(([id,c])=>`
+            <tr class="border-b border-gray-100"><td class="p-2 font-bold">${c.nome}</td><td class="p-2 text-right">${formatBRL(c.tinturaria)}</td>
+            <td class="p-2 text-right"><button onclick="Admin.editC('${id}')" class="text-blue-500 mr-2 hover:opacity-75"><i class="fa-solid fa-pen"></i></button><button onclick="Confirm.ask('Apagar cor?', ()=>dbConfig.child('cores/${id}').remove())" class="text-red-500 hover:opacity-75"><i class="fa-solid fa-trash"></i></button></td></tr>
+         `).join("");
+         
+         Admin.renderProducao();
+     },
+     editP: (id) => { const p = AppState.produtos[id]; fid("prod-id").value=id; fid("prod-nome").value=p.nome; fid("prod-fio").value=p.fio; fid("prod-tecelagem").value=p.tecelagem; fid("prod-frete").value=p.frete; fid("prod-lucro").value=p.lucro; fid("prod-piquet").value=p.piquet||0; fid("modal-produto-title").innerText="Editar Artigo"; Modal.open("modal-produto"); },
+     editC: (id) => { const c = AppState.cores[id]; fid("cor-id").value=id; fid("cor-nome").value=c.nome; fid("cor-tinturaria").value=c.tinturaria; fid("modal-cor-title").innerText="Editar Cor"; Modal.open("modal-cor"); },
+     
+     // Kanban & Producao Sync Reativo (Regra 5 e 6)
+     renderProducao: () => {
+         const t = fid("producao-lista-pedidos"), filter = fid("filter-search")?.value.toLowerCase()||"";
+         let fC=0, pC=0, eC=0;
+         ['Orçamento', 'Pagamento Pendente', 'Pago', 'Em Fabricação', 'Pronto', 'Entregue'].forEach(s => {
+             const col = fid(`kb-${s.replace(' ', '-')}`);
+             if (col) col.innerHTML = "";
+         }); // Limpa Kanban
 
-        document
-          .getElementById("btn-whatsapp")
-          ?.addEventListener("click", () =>
-            Calculator.dispatchLead("whatsapp"),
-          );
-        document
-          .getElementById("btn-email")
-          ?.addEventListener("click", () => Calculator.dispatchLead("email"));
+         t.innerHTML = Object.entries(AppState.pedidos).sort((a,b)=>new Date(b[1].data)-new Date(a[1].data)).filter(([id,p])=> (p.clienteNome?.toLowerCase().includes(filter) || p.produto?.toLowerCase().includes(filter))).map(([id,p])=>{
+             const sF = p.statusFinal || "Orçamento";
+             if(sF==="Em Fabricação") fC++; else if(sF==="Pronto") pC++; else if (sF==="Entregue") eC++;
 
-        document
-          .getElementById("btn-download-pdf")
-          ?.addEventListener("click", () => Calculator.downloadPDF());
+             // Kanban Card Injection
+             const kCol = fid(`kb-${sF.replace(' ', '-')}`);
+             if(kCol) {
+                 const card = document.createElement("div"); 
+                 card.className = "bg-white p-3 rounded-xl shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:border-primary transition-all text-xs";
+                 card.draggable = true; card.innerHTML = `<div class="flex justify-between font-mono text-[9px] text-gray-400 mb-1"><span>#${id.slice(1,7).toUpperCase()}</span></div><div class="font-bold mb-1">${p.clienteNome||"-"}</div><div class="truncate text-gray-500 mb-2">${p.produto}</div><div class="flex justify-between font-bold"><span>${p.quantidade}kg</span><span class="text-green-600">${p.valorTotal}</span></div>`;
+                 card.ondragstart = (e) => { e.dataTransfer.setData("text", id); card.classList.add("opacity-50"); };
+                 card.ondragend = () => card.classList.remove("opacity-50");
+                 kCol.appendChild(card);
+             }
 
-        ContatoForm.init();
-        Admin.init();
-        DataStore.initSync();
-        if (AppState.isAdminLogado) Renderer.renderAdminPanel();
+             // Table Row Injection
+             const opt = (arr, val) => arr.map(x=>`<option value="${x}" ${x===val?'selected':''}>${x}</option>`).join("");
+             let bgS = sF==="Orçamento" ? "bg-gray-100 text-gray-800" : sF==="Pagamento Pendente" ? "bg-red-100 text-red-800" : sF==="Pago" ? "bg-indigo-100 text-indigo-800" : sF==="Em Fabricação" ? "bg-blue-100 text-blue-800" : sF==="Pronto" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800";
+             return `<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                <td class="p-2 text-[10px] uppercase font-mono text-gray-400">${id.slice(1,7)}</td><td class="p-2 text-gray-500 whitespace-nowrap">${new Date(p.data).toLocaleDateString()}</td>
+                <td class="p-2 font-bold">${p.clienteNome||"-"}</td><td class="p-2">${p.produto}<br><span class="text-gray-400 text-[10px]">${p.quantidade}kg</span></td>
+                <td class="p-2 font-bold text-green-600">${p.valorTotal}</td>
+                <td class="p-1"><select onchange="Admin.changeStatus('${id}','statusFio',this.value)" class="w-full border-0 bg-transparent text-[11px] outline-none text-center">${opt(['A Comprar','Em Estoque'], p.statusFio)}</select></td>
+                <td class="p-1"><select onchange="Admin.changeStatus('${id}','statusTecelagem',this.value)" class="w-full border-0 bg-transparent text-[11px] outline-none text-center">${opt(['Aguardando','Em Produção','Concluído'], p.statusTecelagem)}</select></td>
+                <td class="p-1"><select onchange="Admin.changeStatus('${id}','statusTinturaria',this.value)" class="w-full border-0 bg-transparent text-[11px] outline-none text-center">${opt(['Aguardando','Em Processo','Concluído'], p.statusTinturaria)}</select></td>
+                <td class="p-1 text-center"><select onchange="Admin.changeStatus('${id}','statusFinal',this.value)" class="${bgS} font-bold rounded px-2 w-full mx-auto outline-none cursor-pointer text-center" style="padding-top:4px; padding-bottom:4px;">${opt(['Orçamento','Pagamento Pendente','Pago','Em Fabricação','Pronto','Entregue'], sF)}</select></td>
+                <td class="p-2 text-center flex justify-center gap-2 mt-1">
+                   <button onclick="Admin.exportLeadSheet('${id}')" class="text-green-600 hover:text-green-800" title="Exportar p/ Google Sheets"><i class="fa-solid fa-file-excel"></i></button>
+                   <button onclick="Confirm.ask('Excluir Pedido Permanentemente?', ()=>dbPedidos.child('${id}').remove())" class="text-red-500 hover:text-red-700" title="Excluir"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                </td>
+             </tr>`;
+         }).join("");
+
+         fid("dash-ativos").innerText = fC; fid("dash-prontos").innerText = pC; fid("dash-entregues").innerText = eC;
+     }
+  };
+  
+  // DRAG N DROP ZONE EVENTS KANBAN (Regra 6)
+  document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.kanban-col').forEach(col => {
+          col.ondragover = e => { e.preventDefault(); col.classList.add("bg-gray-200","border-dashed","border-2","border-gray-400"); };
+          col.ondragleave = () => col.classList.remove("bg-gray-200","border-dashed","border-2","border-gray-400");
+          col.ondrop = e => { e.preventDefault(); col.classList.remove("bg-gray-200","border-dashed","border-2","border-gray-400"); const id = e.dataTransfer.getData("text/plain"); if(id) Admin.changeStatus(id, 'statusFinal', col.dataset.status); };
       });
-    </script>
-  </body>
+  });
+
+  // INITIALIZATION
+  document.addEventListener("DOMContentLoaded", () => {
+      UI.buildFeatures(); Admin.init();
+      
+      // DB Listeners
+      dbConfig.on("value", s => { const d=s.val()||{}; AppState.produtos=d.produtos||{}; AppState.cores=d.cores||{}; AppState.contatos=d.contatos||{}; AppState.urlSheets=d.urlSheets||""; AppState.sheetAutoStatus=d.sheetAutoStatus!==false; UI.syncConfig(); if(AppState.isAdmin) Admin.renderAll(); });
+      dbPedidos.on("value", s => { AppState.pedidos=s.val()||{}; if(AppState.isAdmin) Admin.renderProducao(); }); // Listener reactives List and Kanban
+
+      // Calc Binds
+      ["sel-produto", "sel-cor", "sel-quantidade"].forEach(id => fid(id)?.addEventListener("change", Calc.run));
+      fid("btn-whatsapp")?.addEventListener("click", () => Calc.dispatchLead("whatsapp"));
+      fid("btn-download-pdf")?.addEventListener("click", () => Calc.downloadPDF());
+
+      // Auth Bind
+      fid("form-login")?.addEventListener("submit", e=>{ e.preventDefault(); if(fid("input-senha").value==="Mortadela123") { AppState.setAdmin(true); Modal.close("modal-login"); Navigation.switchPage("admin"); } else Toast.show("Senha incorreta","error"); });
+      fid("btn-logout")?.addEventListener("click", ()=> { AppState.setAdmin(false); Navigation.switchPage("home"); });
+
+      // Clicks Delegation
+      document.addEventListener("click", e => {
+         const dPage=e.target.closest("[data-page]"); if(dPage) Navigation.switchPage(dPage.dataset.page);
+         if(e.target.closest(".btn-close-modal")) Modal.close(e.target.closest(".pf-modal").id);
+      });
+      fid("btn-open-drawer").onclick = ()=> { fid('mobile-drawer').classList.add('open'); fid('drawer-backdrop').classList.add('open'); };
+      fid("btn-close-drawer").onclick = ()=> { fid('mobile-drawer').classList.remove('open'); fid('drawer-backdrop').classList.remove('open'); };
+      fid("btn-novo-produto").onclick = ()=>{ fid("form-produto").reset(); fid("prod-id").value=""; fid("modal-produto-title").innerText="Novo Artigo"; Modal.open("modal-produto"); };
+      fid("btn-nova-cor").onclick = ()=>{ fid("form-cor").reset(); fid("cor-id").value=""; fid("modal-cor-title").innerText="Nova Cor"; Modal.open("modal-cor"); };
+  });
+
+</script>
+</body>
 </html>
