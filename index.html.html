@@ -256,7 +256,7 @@
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs min-w-[650px]">
                   <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr><th class="p-3">Artigo</th><th class="p-3">Fio</th><th class="p-3">Tecel.</th><th class="p-3">Tintura.</th><th class="p-3 text-pink-600">Custo Adc.(Piquet)</th><th class="p-3">Frete</th><th class="p-3">Lucro(%)</th><th class="p-3 text-center">Ações</th></tr>
+                    <tr><th class="p-3">Artigo</th><th class="p-3">Fio</th><th class="p-3">Tecel.</th><th class="p-3">Tintura.</th><th class="p-3 text-pink-600">Custo Adc.(Piquet)</th><th class="p-3">Frete</th><th class="p-3">Lucro(R$)</th><th class="p-3 text-center">Ações</th></tr>
                   </thead>
                   <tbody id="adm-lista-produtos"></tbody>
                 </table>
@@ -634,16 +634,14 @@
   const UI = {
      buildFeatures: () => {
          const f = [
-            {i:'fa-layer-group text-blue-500', t:'Alta Capacidade', d:'Tecelagem industrial em larga escala'},
-            {i:'fa-droplet text-blue-500', t:'Cores Fiéis', d:'Laboratório tintureiro padronizado'},
-            {i:'fa-shield-halved text-blue-500', t:'Rastreabilidade', d:'Qualidade 100% monitorada'},
-            {i:'fa-clock text-accent', t:'Prazo Otimizado', d:'Média de 25 a 45 dias úteis de entrega'},
-            {i:'fa-chart-pie text-accent', t:'Controle de Perdas', d:'Fator de quebra retido entre 6% e 8%'},
-            {i:'fa-handshake text-primary', t:'B2B Integrado', d:'Consultoria de Engenharia ponta a ponta'}
-			 
-'}
-         ];
-         const fl = fid('features-list'); if(fl) fl.innerHTML = f.map(x=>`<div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm pf-card-hover"><div class="w-11 h-11 bg-gray-50 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid ${x.i}"></i></div><h3 class="font-bold text-lg mb-2">${x.t}</h3><p class="text-sm text-gray-500 leading-relaxed">${x.d}</p></div>`).join('');
+            {i:'fa-layer-group text-blue-500', t:'Alta Capacidade', d:'Estrutura industrial dimensionada para atender grandes volumes em tecelagem e acabamentos com prazos otimizados.'},
+            {i:'fa-droplet text-blue-500', t:'Cores Fiéis', d:'Fidelidade absoluta de cores com laboratórios automatizados e insumos com certificações de sustentabilidade.'},
+            {i:'fa-shield-halved text-blue-500', t:'Garantia e Rastreabilidade', d:'Monitoramento laboratorial desde o fio cru até a expedição final do rolo de malha acabado.'},
+            {i:'fa-clock text-accent', t:'Prazo de Fabricação', d:'Média de <strong>25 a 45 dias</strong> conforme produto e quantidade.'},
+            {i:'fa-chart-pie text-accent', t:'Controle de Perdas', d:'Perdas industriais de 6% a 8%, dentro do padrão técnico setorial.'},
+			{i:'fa-handshake text-primary', t:'Atendimento Consultivo', d:'Nossa equipe técnica orienta em cada etapa, da especificação do fio à escolha do acabamento ideal.'}
+        ];
+			 const fl = fid('features-list'); if(fl) fl.innerHTML = f.map(x=>`<div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm pf-card-hover"><div class="w-11 h-11 bg-gray-50 rounded-xl flex items-center justify-center text-xl mb-4"><i class="fa-solid ${x.i}"></i></div><h3 class="font-bold text-lg mb-2">${x.t}</h3><p class="text-sm text-gray-500 leading-relaxed">${x.d}</p></div>`).join('');
      },
      syncConfig: () => {
          const selP = fid("sel-produto"), selC = fid("sel-cor");
@@ -754,7 +752,7 @@
          
          // Produtos & Cores Table
          fid("adm-lista-produtos").innerHTML = Object.entries(AppState.produtos).map(([id,p])=>`
-            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${p.nome}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${Number(p.lucro||0)}%</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${p.lucro}%</td>
+            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${p.nome}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${Number(p.lucro||0)}%</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${formatBRL(p.lucro)}</td>
             <td class="p-3 text-center"><button onclick="Admin.editP('${id}')" class="text-blue-500 mr-2"><i class="fa-solid fa-pen"></i></button><button onclick="Confirm.ask('Apagar produto?', ()=>dbConfig.child('produtos/${id}').remove())" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>
          `).join("");
          
@@ -787,7 +785,10 @@
                  const card = document.createElement("div"); 
                  card.className = "bg-white p-3 rounded-xl shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:border-primary transition-all text-xs";
                  card.draggable = true; card.innerHTML = `<div class="flex justify-between font-mono text-[9px] text-gray-400 mb-1"><span>#${id.slice(1,7).toUpperCase()}</span></div><div class="font-bold mb-1">${p.clienteNome||"-"}</div><div class="truncate text-gray-500 mb-2">${p.produto}</div><div class="flex justify-between font-bold"><span>${p.quantidade}kg</span><span class="text-green-600">${p.valorTotal}</span></div>`;
-                 card.ondragstart = (e) => { e.dataTransfer.setData("text", id); card.classList.add("opacity-50"); };
+                 card.ondragstart = (e) => { 
+ 				 e.dataTransfer.setData("text/plain", id); 
+ 				 card.classList.add("opacity-50"); 
+		};
                  card.ondragend = () => card.classList.remove("opacity-50");
                  kCol.appendChild(card);
              }
