@@ -441,13 +441,51 @@
   document.addEventListener('DOMContentLoaded', () => { fid('btn-confirm-action')?.addEventListener('click', () => { if(confirmCallback) confirmCallback(); Modal.close('modal-confirm'); }); });
 
   // NAVIGATION & UI
+  const HASH_TO_PAGE = { home: "home", orcamento: "orcamento", contato: "contato" };
+  const PAGE_TO_HASH = { home: "", orcamento: "orcamento", contato: "contato" };
+
+  function getPageFromHash() {
+    const hash = window.location.hash.replace("#", "").trim().toLowerCase();
+    return HASH_TO_PAGE[hash] || "home";
+  }
+
+  function updateUrlForPage(tgt) {
+    if (!(tgt in PAGE_TO_HASH)) return;
+
+    const nextHash = PAGE_TO_HASH[tgt];
+    const nextUrl = nextHash
+      ? `${window.location.pathname}${window.location.search}#${nextHash}`
+      : `${window.location.pathname}${window.location.search}`;
+
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentUrl !== nextUrl) {
+      history.pushState({ page: tgt }, "", nextUrl);
+    }
+  }
+
   const Navigation = {
-    switchPage: (tgt) => {
-      if(tgt === 'admin' && !AppState.isAdmin) return Modal.open("modal-login");
+    switchPage: (tgt, updateUrl = true) => {
+      const pageId = `page-${tgt}`;
+      const targetPage = fid(pageId);
+      if (!targetPage) tgt = "home";
+
+      if (tgt === "admin" && !AppState.isAdmin) {
+        Modal.open("modal-login");
+        return;
+      }
+
       document.querySelectorAll(".pf-section").forEach(el => el.classList.remove("is-active"));
       fid(`page-${tgt}`)?.classList.add("is-active");
-      if(tgt === 'admin') Admin.renderAll();
-      fid('mobile-drawer').classList.remove('open'); fid('drawer-backdrop').classList.remove('open');
+
+      document.querySelectorAll("[data-page]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.page === tgt);
+      });
+
+      if (updateUrl) updateUrlForPage(tgt);
+      if (tgt === "admin") Admin.renderAll();
+
+      fid("mobile-drawer")?.classList.remove("open");
+      fid("drawer-backdrop")?.classList.remove("open");
     }
   };
 
@@ -832,6 +870,15 @@
   // INITIALIZATION
   document.addEventListener("DOMContentLoaded", () => {
       UI.buildFeatures(); Admin.init();
+      Navigation.switchPage(getPageFromHash(), false);
+
+      window.addEventListener("hashchange", () => {
+          Navigation.switchPage(getPageFromHash(), false);
+      });
+
+      window.addEventListener("popstate", () => {
+          Navigation.switchPage(getPageFromHash(), false);
+      });
       
       // DB Listeners
       dbConfig.on("value", s => { const d=s.val()||{}; AppState.produtos=d.produtos||{}; AppState.cores=d.cores||{}; AppState.contatos=d.contatos||{}; AppState.urlSheets=d.urlSheets||""; AppState.sheetAutoStatus=d.sheetAutoStatus!==false; UI.syncConfig(); if(AppState.isAdmin) Admin.renderAll(); });
