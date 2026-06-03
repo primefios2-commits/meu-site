@@ -381,7 +381,7 @@
           <div><label class="text-[10px] uppercase font-bold text-gray-500">Tecelagem (R$)</label><input type="number" step="0.01" id="prod-tecelagem" class="pf-input text-sm" required /></div>
           <div><label class="text-[10px] uppercase font-bold text-pink-500">Custo Piquet (R$)</label><input type="number" step="0.01" id="prod-piquet" class="pf-input text-sm border-pink-200" placeholder="0.00" /></div>
           <div><label class="text-[10px] uppercase font-bold text-gray-500">Frete (R$)</label><input type="number" step="0.01" id="prod-frete" class="pf-input text-sm" required /></div>
-          <div class="col-span-2"><label class="text-[10px] uppercase font-bold text-gray-500">Lucro Geral (%)</label><input type="number" step="1" id="prod-lucro" class="pf-input text-sm" required /></div>
+          <div class="col-span-2"><label class="text-[10px] uppercase font-bold text-gray-500">Lucro Geral (R$)</label><input type="number" step="0.01" id="prod-lucro" class="pf-input text-sm" required /></div>
         </div>
         <div class="flex gap-2 pt-2">
           <button type="button" class="btn-close-modal w-1/2 bg-gray-100 py-2.5 rounded-xl font-bold">Cancelar</button>
@@ -559,8 +559,10 @@
            `_Quebra/percas: 6% a 8%._`;
 
          if (way === "whatsapp") {
-             const phone = (AppState.contatos?.whatsapp || "").replace(/\D/g, "");
-             window.open(`https://api.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`, "_blank");
+             let phone = (AppState.contatos?.whatsapp || "").replace(/\D/g, "");
+             if (!phone) return Toast.show("WhatsApp não configurado no painel.", "error");
+             if (!phone.startsWith("55")) phone = "55" + phone;
+             window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`, "_blank");
          } else if (way === "email") {
              const email = AppState.contatos?.email || "contato@empresa.com.br";
              window.open(`mailto:${email}?subject=${encodeURIComponent("Solicitação de Orçamento Têxtil")}&body=${encodeURIComponent(msg)}`, "_blank");
@@ -681,9 +683,12 @@
          }
          
          if(ct.whatsapp) {
-             const cleanW = ct.whatsapp.replace(/\D/g,"");
-             fid("floating-whatsapp")?.setAttribute("href", `https://api.whatsapp.com/send?phone=55${cleanW}`);
+             let cleanW = ct.whatsapp.replace(/\D/g,"");
+             if (!cleanW.startsWith("55")) cleanW = "55" + cleanW;
+             fid("floating-whatsapp")?.setAttribute("href", `https://api.whatsapp.com/send?phone=${cleanW}`);
              fid("floating-whatsapp")?.classList.remove("hidden");
+         } else {
+             fid("floating-whatsapp")?.classList.add("hidden");
          }
      }
   };
@@ -752,7 +757,7 @@
          
          // Produtos & Cores Table
          fid("adm-lista-produtos").innerHTML = Object.entries(AppState.produtos).map(([id,p])=>`
-            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${p.nome}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${Number(p.lucro||0)}%</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${formatBRL(p.lucro)}</td>
+            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${p.nome}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${formatBRL(p.lucro)}</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${formatBRL(p.lucro)}</td>
             <td class="p-3 text-center"><button onclick="Admin.editP('${id}')" class="text-blue-500 mr-2"><i class="fa-solid fa-pen"></i></button><button onclick="Confirm.ask('Apagar produto?', ()=>dbConfig.child('produtos/${id}').remove())" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>
          `).join("");
          
@@ -836,6 +841,49 @@
       ["sel-produto", "sel-cor", "sel-quantidade"].forEach(id => fid(id)?.addEventListener("change", Calc.run));
       fid("btn-whatsapp")?.addEventListener("click", () => Calc.dispatchLead("whatsapp"));
       fid("btn-download-pdf")?.addEventListener("click", () => Calc.downloadPDF());
+
+      // Dark Mode
+      fid("btn-toggle-dark")?.addEventListener("click", () => {
+          document.documentElement.classList.toggle("dark");
+      });
+
+      // Contact Form
+      fid("form-contato")?.addEventListener("submit", e => {
+          e.preventDefault();
+          const nome = fid("c-nome")?.value.trim() || "";
+          const email = fid("c-email")?.value.trim() || "";
+          const mensagem = fid("c-msg")?.value.trim() || "";
+          let phone = (AppState.contatos?.whatsapp || "").replace(/\D/g, "");
+          if (!phone) return Toast.show("WhatsApp não configurado no painel.", "error");
+          if (!phone.startsWith("55")) phone = "55" + phone;
+          const texto = `Olá, meu nome é ${nome}\nE-mail: ${email}\nMensagem: ${mensagem}`;
+          window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(texto)}`, "_blank");
+      });
+
+      // Backup local dos dados
+      fid("btn-export-full")?.addEventListener("click", () => {
+          const backup = {
+              dadosPrimeFios: {
+                  produtos: AppState.produtos || {},
+                  cores: AppState.cores || {},
+                  contatos: AppState.contatos || {},
+                  urlSheets: AppState.urlSheets || "",
+                  sheetAutoStatus: AppState.sheetAutoStatus !== false
+              },
+              pedidosPrimeFios: AppState.pedidos || {},
+              geradoEm: new Date().toISOString()
+          };
+          const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `backup-prime-fios-${Date.now()}.json`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          Toast.show("Backup gerado com sucesso!");
+      });
 
       // Auth Bind
       fid("form-login")?.addEventListener("submit", e=>{ e.preventDefault(); if(fid("input-senha").value==="Mortadela123") { AppState.setAdmin(true); Modal.close("modal-login"); Navigation.switchPage("admin"); } else Toast.show("Senha incorreta","error"); });
