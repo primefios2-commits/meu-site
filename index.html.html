@@ -143,6 +143,11 @@
             <div class="space-y-1.5"><label class="block text-xs font-bold text-gray-500 uppercase">1. Produto</label><select id="sel-produto" class="pf-input font-semibold"></select></div>
             <div class="space-y-1.5"><label class="block text-xs font-bold text-gray-500 uppercase">2. Cor</label><select id="sel-cor" class="pf-input font-semibold"></select></div>
           </div>
+          <div id="wrap-composicao-fio" class="space-y-1.5 hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 dark:bg-amber-900/20 dark:border-amber-900/40">
+            <label class="block text-xs font-bold text-amber-700 uppercase"><i class="fa-solid fa-spool mr-1"></i> Composição do fio</label>
+            <select id="sel-composicao-fio" class="pf-input font-semibold bg-white"></select>
+            <p id="txt-composicao-info" class="text-[11px] text-amber-700 font-medium hidden"></p>
+          </div>
           <div class="space-y-1.5">
             <label class="block text-xs font-bold text-gray-500 uppercase">3. Volume (kg)</label>
             <select id="sel-quantidade" class="pf-input font-bold text-base"><option value="300">300 KG</option><option value="500">500 KG</option><option value="1000" selected>1.000 KG</option><option value="5000">5.000 KG</option></select>
@@ -259,6 +264,33 @@
                     <tr><th class="p-3">Artigo</th><th class="p-3">Fio</th><th class="p-3">Tecel.</th><th class="p-3">Tintura.</th><th class="p-3 text-pink-600">Custo Adc.(Piquet)</th><th class="p-3">Frete</th><th class="p-3">Lucro(R$)</th><th class="p-3 text-center">Ações</th></tr>
                   </thead>
                   <tbody id="adm-lista-produtos"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="font-bold"><i class="fa-solid fa-spool text-amber-500 mr-1"></i> Composição do fio por malha</h3>
+                  <p class="text-[11px] text-gray-500 mt-1">Cadastre opções apenas nas malhas que precisam desse campo. Malhas sem opções ficam com o campo oculto no simulador.</p>
+                </div>
+                <button id="btn-nova-composicao" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">Nova Composição</button>
+              </div>
+              <div class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="md:col-span-1">
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Malha / Artigo</label>
+                  <select id="adm-comp-produto" class="pf-input text-sm"></select>
+                </div>
+                <div class="md:col-span-2 bg-amber-50 border border-amber-100 rounded-xl p-3 text-[11px] text-amber-800 font-medium">
+                  <strong>Como funciona:</strong> o valor em R$/kg será somado ao orçamento. Se for apenas informativo, deixe o valor como 0,00.
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs min-w-[620px]">
+                  <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr><th class="p-3">Composição</th><th class="p-3">Valor/R$ kg</th><th class="p-3">Informação</th><th class="p-3 text-center">Ações</th></tr>
+                  </thead>
+                  <tbody id="adm-lista-composicoes"></tbody>
                 </table>
               </div>
             </div>
@@ -406,6 +438,33 @@
     </div>
   </div>
 
+  <div id="modal-composicao" class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+    <div class="modal-card bg-white rounded-3xl p-6 max-w-md w-full">
+      <h3 class="font-display text-xl font-black mb-4 text-center" id="modal-composicao-title">Nova Composição</h3>
+      <form id="form-composicao" class="space-y-4">
+        <input type="hidden" id="comp-id" />
+        <input type="hidden" id="comp-produto-original" />
+        <label class="block text-[10px] uppercase font-bold text-gray-500">Malha / Artigo</label>
+        <select id="comp-produto" class="pf-input text-sm" required></select>
+        <label class="block text-[10px] uppercase font-bold text-gray-500">Nome da composição</label>
+        <input type="text" id="comp-nome" class="pf-input text-sm" placeholder="Ex: 50% Algodão / 50% Poliéster" required />
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-gray-500">Valor adicional no kg (R$)</label>
+          <input type="number" step="0.01" id="comp-valor" class="pf-input text-sm" placeholder="0.00" value="0" />
+          <p class="text-[10px] text-gray-400 mt-1">Deixe 0 se a composição for apenas informativa.</p>
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-gray-500">Informação opcional</label>
+          <textarea id="comp-info" class="pf-input text-sm resize-none" rows="2" placeholder="Ex: indicado para uniformes, maior elasticidade..."></textarea>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" class="btn-close-modal w-1/2 bg-gray-100 py-2.5 rounded-xl font-bold">Cancelar</button>
+          <button type="submit" class="w-1/2 bg-primary text-white py-2.5 rounded-xl font-bold">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="modal-confirm" class="pf-modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
     <div class="modal-card bg-white rounded-3xl p-6 max-w-sm w-full text-center">
       <h3 class="font-display text-xl font-black mb-2 text-red-600"><i class="fa-solid fa-triangle-exclamation"></i> Atenção</h3>
@@ -422,6 +481,8 @@
   const qs = (s) => document.querySelector(s);
   const fid = (id) => document.getElementById(id);
   const formatBRL = (val) => Number(val||0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const toNum = (v) => parseFloat(String(v ?? 0).replace(",", ".")) || 0;
+  const safeText = (v) => String(v ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
   function maskPhone(v) { 
       v=v.replace(/\D/g,""); if(v.length>11) v=v.slice(0,11); 
       return v.replace(/^(\d{2})(\d)/g,"($1) $2").replace(/(\d)(\d{4})$/,"$1-$2"); 
@@ -495,18 +556,77 @@
   const dbConfig = firebase.database().ref("dadosPrimeFios"), dbPedidos = firebase.database().ref("pedidosPrimeFios");
 
   const AppState = { 
-     produtos: {}, cores: {}, contatos: {}, pedidos: {}, urlSheets: "", sheetAutoStatus: true,
+     produtos: {}, cores: {}, composicoes: {}, contatos: {}, pedidos: {}, urlSheets: "", sheetAutoStatus: true,
      get isAdmin() { return sessionStorage.getItem("pf_adm") === "1"; },
      setAdmin(v) { v ? sessionStorage.setItem("pf_adm","1") : sessionStorage.removeItem("pf_adm"); }
   };
 
   // BUSINESS LOGIC: CALCULATOR & LEADS
   const Calc = {
+     getComposicoesProduto: (produtoId) => {
+         if (!produtoId) return [];
+         return Object.entries(AppState.composicoes?.[produtoId] || {})
+             .filter(([, item]) => item && item.nome)
+             .map(([id, item]) => ({ id, ...item }));
+     },
+
+     getComposicaoSelecionada: () => {
+         const selProd = fid("sel-produto");
+         const selComp = fid("sel-composicao-fio");
+         const produtoId = selProd?.value || "";
+         const compId = selComp?.value || "";
+         if (!produtoId || !compId) return null;
+         const item = AppState.composicoes?.[produtoId]?.[compId];
+         return item ? { id: compId, ...item } : null;
+     },
+
+     updateComposicaoField: () => {
+         const selProd = fid("sel-produto");
+         const wrap = fid("wrap-composicao-fio");
+         const selComp = fid("sel-composicao-fio");
+         const info = fid("txt-composicao-info");
+         if (!wrap || !selComp) return;
+
+         const produtoId = selProd?.value || "";
+         const composicoes = Calc.getComposicoesProduto(produtoId);
+         const valorAtual = selComp.value;
+
+         if (!produtoId || !composicoes.length) {
+             wrap.classList.add("hidden");
+             selComp.innerHTML = "";
+             if (info) { info.textContent = ""; info.classList.add("hidden"); }
+             return;
+         }
+
+         wrap.classList.remove("hidden");
+         selComp.innerHTML = `<option disabled selected value="">Selecione a composição</option>` + composicoes.map(item => {
+             const valor = toNum(item.valor);
+             const textoValor = valor > 0 ? ` (+${formatBRL(valor)}/kg)` : "";
+             return `<option value="${item.id}">${safeText(item.nome)}${textoValor}</option>`;
+         }).join("");
+
+         if (valorAtual && composicoes.some(item => item.id === valorAtual)) selComp.value = valorAtual;
+
+         const selecionada = Calc.getComposicaoSelecionada();
+         if (info) {
+             if (selecionada?.info) {
+                 info.textContent = selecionada.info;
+                 info.classList.remove("hidden");
+             } else {
+                 info.textContent = "";
+                 info.classList.add("hidden");
+             }
+         }
+     },
+
      run: () => {
+         Calc.updateComposicaoField();
+
          const selProd = fid("sel-produto");
          const selCor = fid("sel-cor");
          const p = AppState.produtos?.[selProd?.value];
          const c = AppState.cores?.[selCor?.value];
+         const comp = Calc.getComposicaoSelecionada();
          const qtd = parseFloat(fid("sel-quantidade")?.value) || 0;
 
          if (!p || !c || !qtd) {
@@ -518,12 +638,12 @@
              return;
          }
 
-         const toNum = (v) => parseFloat(String(v ?? 0).replace(",", ".")) || 0;
          const panel = fid("painel-resultados");
          panel?.classList.add("opacity-50", "scale-[0.98]");
 
          const pPiquet = toNum(p.piquet);
-         const pKg = toNum(p.fio) + toNum(p.tecelagem) + toNum(c.tinturaria) + toNum(p.frete) + toNum(p.lucro) + pPiquet;
+         const compValor = toNum(comp?.valor);
+         const pKg = toNum(p.fio) + toNum(p.tecelagem) + toNum(c.tinturaria) + toNum(p.frete) + toNum(p.lucro) + pPiquet + compValor;
          const total = pKg * qtd;
          const sinal = toNum(p.fio) * qtd;
          const entrega = total - sinal;
@@ -541,19 +661,34 @@
                <p>Fio: <span class="text-white">${formatBRL(toNum(p.fio))}</span> | Tecelagem: <span class="text-white">${formatBRL(toNum(p.tecelagem))}</span></p>
                <p>Tinturaria: <span class="text-white">${formatBRL(toNum(c.tinturaria) + toNum(p.lucro))}</span> | Frete: <span class="text-white">${formatBRL(toNum(p.frete))}</span></p>
                ${pPiquet > 0 ? `<p>Adicional Piquet: <span class="text-white">${formatBRL(pPiquet)}</span></p>` : ""}
+               ${comp ? `<p>Composição do fio: <span class="text-white">${safeText(comp.nome)}</span>${compValor > 0 ? ` | Adicional: <span class="text-white">${formatBRL(compValor)}</span>` : ` <span class="text-white">(informativo)</span>`}</p>` : ""}
              `;
          }
 
          panel?.classList.remove("opacity-50", "scale-[0.98]");
      },
 
+     requireComposicaoIfVisible: () => {
+         const wrap = fid("wrap-composicao-fio");
+         const selComp = fid("sel-composicao-fio");
+         if (wrap && !wrap.classList.contains("hidden") && !selComp?.value) {
+             Toast.show("Selecione a composição do fio.", "error");
+             return false;
+         }
+         return true;
+     },
+
      dispatchLead: async (way) => {
          const pNode = fid("sel-produto");
          const cNode = fid("sel-cor");
          if (!pNode?.value || !cNode?.value) return Toast.show("Selecione Produto e Cor!", "error");
+         if (!Calc.requireComposicaoIfVisible()) return;
 
          Calc.run();
 
+         const comp = Calc.getComposicaoSelecionada();
+         const compValor = toNum(comp?.valor);
+         const compTexto = comp ? `${comp.nome}${compValor > 0 ? ` (+${formatBRL(compValor)}/kg)` : ""}` : "";
          const num = fid("input-cliente-whats")?.value.trim() || "";
          const nom = fid("input-cliente-nome")?.value.trim() || "Lead S/N";
          const prodFull = pNode.options[pNode.selectedIndex].text + " / " + cNode.options[cNode.selectedIndex].text;
@@ -570,6 +705,8 @@
                  clienteNome: nom,
                  clienteWhats: num,
                  produto: prodFull,
+                 composicaoFio: compTexto,
+                 composicaoValor: compValor,
                  quantidade: qtd,
                  valorTotal: totStr,
                  data: new Date().toISOString(),
@@ -587,6 +724,7 @@
 
          const msg = `*SOLICITAÇÃO DE ORÇAMENTO TÊXTIL*\n\n` +
            `*Produto:* ${prodFull}\n` +
+           `${compTexto ? `*Composição do fio:* ${compTexto}\n` : ""}` +
            `*Volume:* ${qtd} kg\n` +
            `*Valor por kg:* ${vKg}\n` +
            `*Valor total:* ${totStr}\n\n` +
@@ -611,9 +749,13 @@
          const pNode = fid("sel-produto");
          const cNode = fid("sel-cor");
          if (!pNode?.value || !cNode?.value) return Toast.show("Selecione Produto e Cor antes de baixar o PDF.", "error");
+         if (!Calc.requireComposicaoIfVisible()) return;
 
          Calc.run();
 
+         const comp = Calc.getComposicaoSelecionada();
+         const compValor = toNum(comp?.valor);
+         const compTexto = comp ? `${comp.nome}${compValor > 0 ? ` (+${formatBRL(compValor)}/kg)` : ""}` : "-";
          const produto = pNode.options[pNode.selectedIndex].text;
          const cor = cNode.options[cNode.selectedIndex].text;
          const qtd = fid("sel-quantidade")?.value || "";
@@ -636,20 +778,21 @@
              <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">Pré-orçamento têxtil - ${new Date().toLocaleDateString("pt-BR")}</p>
            </div>
            <h2 style="font-size:18px;color:#1e3a8a;margin-bottom:10px;">Dados do cliente</h2>
-           <p><strong>Nome:</strong> ${nome}</p>
-           <p><strong>WhatsApp:</strong> ${whats}</p>
+           <p><strong>Nome:</strong> ${safeText(nome)}</p>
+           <p><strong>WhatsApp:</strong> ${safeText(whats)}</p>
            <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Detalhes da simulação</h2>
            <table style="width:100%;border-collapse:collapse;font-size:14px;">
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Produto</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${produto}</td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Cor</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${cor}</td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Quantidade</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${qtd} kg</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Produto</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(produto)}</td></tr>
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Cor</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(cor)}</td></tr>
+             ${comp ? `<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Composição do fio</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(compTexto)}</td></tr>` : ""}
+             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Quantidade</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(qtd)} kg</td></tr>
              <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Valor/kg</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${valorKg}</td></tr>
              <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>${total}</strong></td></tr>
              <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Sinal/Fio</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${sinal}</td></tr>
              <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Liquidação</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${entrega}</td></tr>
            </table>
-           <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Composição</h2>
-           <pre style="background:#f3f4f6;padding:14px;border-radius:8px;white-space:pre-wrap;font-size:12px;line-height:1.5;">${breakdown}</pre>
+           <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Estrutura do orçamento</h2>
+           <pre style="background:#f3f4f6;padding:14px;border-radius:8px;white-space:pre-wrap;font-size:12px;line-height:1.5;">${safeText(breakdown)}</pre>
            <p style="margin-top:28px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Quebra/percas: 6% a 8%. Valores sujeitos à confirmação comercial.</p>
          `;
 
@@ -687,22 +830,27 @@
          const selP = fid("sel-produto"), selC = fid("sel-cor");
          const produtos = Object.entries(AppState.produtos || {});
          const cores = Object.entries(AppState.cores || {});
+         const produtoAtual = selP?.value || "";
+         const corAtual = selC?.value || "";
 
          if (selP) {
              selP.innerHTML = `<option disabled selected value="">Artigo / Malha</option>` +
-                 produtos.map(([id, p]) => `<option value="${id}">${p.nome}</option>`).join("");
+                 produtos.map(([id, p]) => `<option value="${id}">${safeText(p.nome)}</option>`).join("");
+             if (produtoAtual && AppState.produtos?.[produtoAtual]) selP.value = produtoAtual;
          }
          if (selC) {
              selC.innerHTML = `<option disabled selected value="">Tinturaria / Cor</option>` +
-                 cores.map(([id, c]) => `<option value="${id}">${c.nome}</option>`).join("");
+                 cores.map(([id, c]) => `<option value="${id}">${safeText(c.nome)}</option>`).join("");
+             if (corAtual && AppState.cores?.[corAtual]) selC.value = corAtual;
          }
+
+         Calc.updateComposicaoField();
 
          // ESSENCIAL: libera o formulário do simulador após carregar produtos/cores
          fid("skeleton-orcamento")?.classList.add("hidden");
          fid("form-orcamento")?.classList.remove("hidden");
 
-         if (selP?.value && selC?.value) Calc.run();
-         else Calc.run();
+         Calc.run();
          
          const ct = AppState.contatos;
          fid("ct-whatsapp").innerText = ct.whatsapp || "..."; fid("ct-email").innerText = ct.email || "...";
@@ -767,6 +915,24 @@
            Modal.close("modal-cor"); Toast.show("Cor Salva");
         });
 
+        fid("form-composicao")?.addEventListener("submit", async e => {
+           e.preventDefault();
+           const produtoId = fid("comp-produto")?.value;
+           if (!produtoId) return Toast.show("Selecione a malha da composição.", "error");
+           const id = fid("comp-id").value || "cf"+Date.now();
+           const produtoOriginal = fid("comp-produto-original")?.value || produtoId;
+           await dbConfig.child(`composicoes/${produtoId}/${id}`).set({
+              nome: fid("comp-nome").value,
+              valor: fid("comp-valor").value || 0,
+              info: fid("comp-info").value || ""
+           });
+           if (produtoOriginal && produtoOriginal !== produtoId) await dbConfig.child(`composicoes/${produtoOriginal}/${id}`).remove();
+           fid("adm-comp-produto").value = produtoId;
+           Modal.close("modal-composicao");
+           Toast.show("Composição salva!");
+        });
+
+        fid("adm-comp-produto")?.addEventListener("change", Admin.renderComposicoes);
         fid("filter-search")?.addEventListener("input", Admin.renderProducao);
      },
      exportLeadSheet: async (id) => {
@@ -795,19 +961,76 @@
          
          // Produtos & Cores Table
          fid("adm-lista-produtos").innerHTML = Object.entries(AppState.produtos).map(([id,p])=>`
-            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${p.nome}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${formatBRL(p.lucro)}</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${formatBRL(p.lucro)}</td>
+            <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="p-3 font-bold">${safeText(p.nome)}</td><td class="p-3">${formatBRL(p.fio)}</td><td class="p-3">${formatBRL(p.tecelagem)}</td><td class="p-3">Tintura + ${formatBRL(p.lucro)}</td><td class="p-3 font-bold text-pink-600">${formatBRL(p.piquet)}</td><td class="p-3">${formatBRL(p.frete)}</td><td class="p-3">${formatBRL(p.lucro)}</td>
             <td class="p-3 text-center"><button onclick="Admin.editP('${id}')" class="text-blue-500 mr-2"><i class="fa-solid fa-pen"></i></button><button onclick="Confirm.ask('Apagar produto?', ()=>dbConfig.child('produtos/${id}').remove())" class="text-red-500"><i class="fa-solid fa-trash"></i></button></td></tr>
          `).join("");
          
          fid("adm-lista-cores").innerHTML = Object.entries(AppState.cores).map(([id,c])=>`
-            <tr class="border-b border-gray-100"><td class="p-2 font-bold">${c.nome}</td><td class="p-2 text-right">${formatBRL(c.tinturaria)}</td>
+            <tr class="border-b border-gray-100"><td class="p-2 font-bold">${safeText(c.nome)}</td><td class="p-2 text-right">${formatBRL(c.tinturaria)}</td>
             <td class="p-2 text-right"><button onclick="Admin.editC('${id}')" class="text-blue-500 mr-2 hover:opacity-75"><i class="fa-solid fa-pen"></i></button><button onclick="Confirm.ask('Apagar cor?', ()=>dbConfig.child('cores/${id}').remove())" class="text-red-500 hover:opacity-75"><i class="fa-solid fa-trash"></i></button></td></tr>
          `).join("");
-         
+
+         Admin.syncComposicaoProdutoSelects();
+         Admin.renderComposicoes();
          Admin.renderProducao();
+     },
+     syncComposicaoProdutoSelects: () => {
+         const produtos = Object.entries(AppState.produtos || {});
+         const options = `<option disabled selected value="">Selecione a malha</option>` + produtos.map(([id,p])=>`<option value="${id}">${safeText(p.nome)}</option>`).join("");
+         const admSel = fid("adm-comp-produto");
+         const modalSel = fid("comp-produto");
+         const admAtual = admSel?.value || "";
+         const modalAtual = modalSel?.value || "";
+         if (admSel) {
+             admSel.innerHTML = options;
+             if (admAtual && AppState.produtos?.[admAtual]) admSel.value = admAtual;
+             else if (produtos.length) admSel.value = produtos[0][0];
+         }
+         if (modalSel) {
+             modalSel.innerHTML = options;
+             if (modalAtual && AppState.produtos?.[modalAtual]) modalSel.value = modalAtual;
+             else if (admSel?.value) modalSel.value = admSel.value;
+         }
+     },
+     renderComposicoes: () => {
+         const tbody = fid("adm-lista-composicoes");
+         const produtoId = fid("adm-comp-produto")?.value;
+         if (!tbody) return;
+         if (!produtoId) {
+             tbody.innerHTML = `<tr><td class="p-4 text-center text-gray-400" colspan="4">Cadastre uma malha/produto primeiro.</td></tr>`;
+             return;
+         }
+         const lista = Object.entries(AppState.composicoes?.[produtoId] || {});
+         if (!lista.length) {
+             tbody.innerHTML = `<tr><td class="p-4 text-center text-gray-400" colspan="4">Nenhuma composição cadastrada. Este produto ficará sem o campo de composição no simulador.</td></tr>`;
+             return;
+         }
+         tbody.innerHTML = lista.map(([id,item])=>`
+            <tr class="border-b border-gray-100 hover:bg-gray-50">
+               <td class="p-3 font-bold">${safeText(item.nome)}</td>
+               <td class="p-3">${formatBRL(item.valor)}</td>
+               <td class="p-3 text-gray-500">${safeText(item.info || "-")}</td>
+               <td class="p-3 text-center">
+                 <button onclick="Admin.editComp('${produtoId}','${id}')" class="text-blue-500 mr-2 hover:opacity-75"><i class="fa-solid fa-pen"></i></button>
+                 <button onclick="Confirm.ask('Apagar composição?', ()=>dbConfig.child('composicoes/${produtoId}/${id}').remove())" class="text-red-500 hover:opacity-75"><i class="fa-solid fa-trash"></i></button>
+               </td>
+            </tr>
+         `).join("");
+     },
+     openNovaComposicao: () => {
+         Admin.syncComposicaoProdutoSelects();
+         fid("form-composicao")?.reset();
+         fid("comp-id").value = "";
+         fid("comp-produto-original").value = "";
+         const produtoId = fid("adm-comp-produto")?.value || "";
+         if (produtoId) fid("comp-produto").value = produtoId;
+         fid("comp-valor").value = 0;
+         fid("modal-composicao-title").innerText = "Nova Composição";
+         Modal.open("modal-composicao");
      },
      editP: (id) => { const p = AppState.produtos[id]; fid("prod-id").value=id; fid("prod-nome").value=p.nome; fid("prod-fio").value=p.fio; fid("prod-tecelagem").value=p.tecelagem; fid("prod-frete").value=p.frete; fid("prod-lucro").value=p.lucro; fid("prod-piquet").value=p.piquet||0; fid("modal-produto-title").innerText="Editar Artigo"; Modal.open("modal-produto"); },
      editC: (id) => { const c = AppState.cores[id]; fid("cor-id").value=id; fid("cor-nome").value=c.nome; fid("cor-tinturaria").value=c.tinturaria; fid("modal-cor-title").innerText="Editar Cor"; Modal.open("modal-cor"); },
+     editComp: (produtoId, id) => { const c = AppState.composicoes?.[produtoId]?.[id]; if(!c) return; Admin.syncComposicaoProdutoSelects(); fid("comp-id").value=id; fid("comp-produto-original").value=produtoId; fid("comp-produto").value=produtoId; fid("comp-nome").value=c.nome||""; fid("comp-valor").value=c.valor||0; fid("comp-info").value=c.info||""; fid("modal-composicao-title").innerText="Editar Composição"; Modal.open("modal-composicao"); },
      
      // Kanban & Producao Sync Reativo (Regra 5 e 6)
      renderProducao: () => {
@@ -827,7 +1050,7 @@
              if(kCol) {
                  const card = document.createElement("div"); 
                  card.className = "bg-white p-3 rounded-xl shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:border-primary transition-all text-xs";
-                 card.draggable = true; card.innerHTML = `<div class="flex justify-between font-mono text-[9px] text-gray-400 mb-1"><span>#${id.slice(1,7).toUpperCase()}</span></div><div class="font-bold mb-1">${p.clienteNome||"-"}</div><div class="truncate text-gray-500 mb-2">${p.produto}</div><div class="flex justify-between font-bold"><span>${p.quantidade}kg</span><span class="text-green-600">${p.valorTotal}</span></div>`;
+                 card.draggable = true; card.innerHTML = `<div class="flex justify-between font-mono text-[9px] text-gray-400 mb-1"><span>#${id.slice(1,7).toUpperCase()}</span></div><div class="font-bold mb-1">${safeText(p.clienteNome||"-")}</div><div class="truncate text-gray-500 mb-1">${safeText(p.produto||"")}</div>${p.composicaoFio ? `<div class="truncate text-amber-600 text-[10px] mb-2">${safeText(p.composicaoFio)}</div>` : ""}<div class="flex justify-between font-bold"><span>${p.quantidade}kg</span><span class="text-green-600">${p.valorTotal}</span></div>`;
                  card.ondragstart = (e) => { 
  				 e.dataTransfer.setData("text/plain", id); 
  				 card.classList.add("opacity-50"); 
@@ -841,7 +1064,7 @@
              let bgS = sF==="Orçamento" ? "bg-gray-100 text-gray-800" : sF==="Pagamento Pendente" ? "bg-red-100 text-red-800" : sF==="Pago" ? "bg-indigo-100 text-indigo-800" : sF==="Em Fabricação" ? "bg-blue-100 text-blue-800" : sF==="Pronto" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800";
              return `<tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                 <td class="p-2 text-[10px] uppercase font-mono text-gray-400">${id.slice(1,7)}</td><td class="p-2 text-gray-500 whitespace-nowrap">${new Date(p.data).toLocaleDateString()}</td>
-                <td class="p-2 font-bold">${p.clienteNome||"-"}</td><td class="p-2">${p.produto}<br><span class="text-gray-400 text-[10px]">${p.quantidade}kg</span></td>
+                <td class="p-2 font-bold">${safeText(p.clienteNome||"-")}</td><td class="p-2">${safeText(p.produto||"")}${p.composicaoFio ? `<br><span class="text-amber-600 text-[10px]">${safeText(p.composicaoFio)}</span>` : ""}<br><span class="text-gray-400 text-[10px]">${p.quantidade}kg</span></td>
                 <td class="p-2 font-bold text-green-600">${p.valorTotal}</td>
                 <td class="p-1"><select onchange="Admin.changeStatus('${id}','statusFio',this.value)" class="w-full border-0 bg-transparent text-[11px] outline-none text-center">${opt(['A Comprar','Em Estoque'], p.statusFio)}</select></td>
                 <td class="p-1"><select onchange="Admin.changeStatus('${id}','statusTecelagem',this.value)" class="w-full border-0 bg-transparent text-[11px] outline-none text-center">${opt(['Aguardando','Em Produção','Concluído'], p.statusTecelagem)}</select></td>
@@ -881,11 +1104,12 @@
       });
       
       // DB Listeners
-      dbConfig.on("value", s => { const d=s.val()||{}; AppState.produtos=d.produtos||{}; AppState.cores=d.cores||{}; AppState.contatos=d.contatos||{}; AppState.urlSheets=d.urlSheets||""; AppState.sheetAutoStatus=d.sheetAutoStatus!==false; UI.syncConfig(); if(AppState.isAdmin) Admin.renderAll(); });
+      dbConfig.on("value", s => { const d=s.val()||{}; AppState.produtos=d.produtos||{}; AppState.cores=d.cores||{}; AppState.composicoes=d.composicoes||{}; AppState.contatos=d.contatos||{}; AppState.urlSheets=d.urlSheets||""; AppState.sheetAutoStatus=d.sheetAutoStatus!==false; UI.syncConfig(); if(AppState.isAdmin) Admin.renderAll(); });
       dbPedidos.on("value", s => { AppState.pedidos=s.val()||{}; if(AppState.isAdmin) Admin.renderProducao(); }); // Listener reactives List and Kanban
 
       // Calc Binds
-      ["sel-produto", "sel-cor", "sel-quantidade"].forEach(id => fid(id)?.addEventListener("change", Calc.run));
+      fid("sel-produto")?.addEventListener("change", () => { Calc.updateComposicaoField(); Calc.run(); });
+      ["sel-cor", "sel-quantidade", "sel-composicao-fio"].forEach(id => fid(id)?.addEventListener("change", Calc.run));
       fid("btn-whatsapp")?.addEventListener("click", () => Calc.dispatchLead("whatsapp"));
       fid("btn-download-pdf")?.addEventListener("click", () => Calc.downloadPDF());
 
@@ -913,6 +1137,7 @@
               dadosPrimeFios: {
                   produtos: AppState.produtos || {},
                   cores: AppState.cores || {},
+                  composicoes: AppState.composicoes || {},
                   contatos: AppState.contatos || {},
                   urlSheets: AppState.urlSheets || "",
                   sheetAutoStatus: AppState.sheetAutoStatus !== false
@@ -945,6 +1170,7 @@
       fid("btn-close-drawer").onclick = ()=> { fid('mobile-drawer').classList.remove('open'); fid('drawer-backdrop').classList.remove('open'); };
       fid("btn-novo-produto").onclick = ()=>{ fid("form-produto").reset(); fid("prod-id").value=""; fid("modal-produto-title").innerText="Novo Artigo"; Modal.open("modal-produto"); };
       fid("btn-nova-cor").onclick = ()=>{ fid("form-cor").reset(); fid("cor-id").value=""; fid("modal-cor-title").innerText="Nova Cor"; Modal.open("modal-cor"); };
+      fid("btn-nova-composicao").onclick = Admin.openNovaComposicao;
   });
 
 </script>
