@@ -776,10 +776,17 @@
          const piquetPDF = toNum(p.piquet);
 
          const div = document.createElement("div");
-         div.style.padding = "36px";
-         div.style.background = "#ffffff";
-         div.style.color = "#111827";
-         div.style.fontFamily = "Arial, sans-serif";
+
+		div.style.width = "760px";
+		div.style.padding = "20px 26px";
+		div.style.background = "#ffffff";
+		div.style.color = "#111827";
+		div.style.fontFamily = "Arial, sans-serif";
+		div.style.boxSizing = "border-box";
+		div.style.position = "fixed";
+		div.style.left = "0";
+		div.style.top = "0";
+		div.style.zIndex = "-9999";
          div.innerHTML = `
            <div style="border-bottom:2px solid #1e3a8a;padding-bottom:12px;margin-bottom:22px;">
              <h1 style="margin:0;color:#1e3a8a;font-size:26px;">Prime Fios</h1>
@@ -817,20 +824,35 @@
            <p style="margin-top:24px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Valores sujeitos à confirmação comercial.</p>
          `;
 
-         try {
-             Toast.show("Gerando PDF...", "success");
-             await html2pdf().set({
-                 margin: 10,
-                 filename: `Orcamento_Prime_Fios_${Date.now()}.pdf`,
-                 image: { type: "jpeg", quality: 0.98 },
-                 html2canvas: { scale: 2 },
-                 jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-             }).from(div).save();
-             Toast.show("PDF gerado com sucesso!", "success");
-         } catch (e) {
-             console.error(e);
-             Toast.show("Erro ao gerar PDF.", "error");
-         }
+document.body.appendChild(div);
+
+try {
+  Toast.show("Gerando PDF...", "success");
+
+  await html2pdf().set({
+    margin: [6, 8, 6, 8],
+    filename: `Orcamento_Prime_Fios_${Date.now()}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 760
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait"
+    }
+  }).from(div).save();
+
+  div.remove();
+  Toast.show("PDF gerado com sucesso!", "success");
+} catch (e) {
+  div.remove();
+  console.error(e);
+  Toast.show("Erro ao gerar PDF.", "error");
+}
      }
   };
 
