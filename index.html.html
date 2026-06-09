@@ -765,7 +765,15 @@
          const total = fid("res-valor-total")?.innerText || formatBRL(0);
          const sinal = fid("res-sinal")?.innerText || formatBRL(0);
          const entrega = fid("res-entrega")?.innerText || formatBRL(0);
-         const breakdown = fid("res-breakdown")?.innerText || "";
+
+         // Valores da estrutura do KG puxados diretamente da simulação
+         const p = AppState.produtos?.[pNode.value] || {};
+         const c = AppState.cores?.[cNode.value] || {};
+         const fioPDF = formatBRL(toNum(p.fio));
+         const tecelagemPDF = formatBRL(toNum(p.tecelagem));
+         const tinturariaPDF = formatBRL(toNum(c.tinturaria) + toNum(p.lucro));
+         const fretePDF = formatBRL(toNum(p.frete));
+         const piquetPDF = toNum(p.piquet);
 
          const div = document.createElement("div");
          div.style.padding = "36px";
@@ -792,8 +800,21 @@
              <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Liquidação</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${entrega}</td></tr>
            </table>
            <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Estrutura do orçamento</h2>
-           <pre style="background:#f3f4f6;padding:14px;border-radius:8px;white-space:pre-wrap;font-size:12px;line-height:1.5;">${safeText(breakdown)}</pre>
-           <p style="margin-top:28px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Quebra/percas: 6% a 8%. Valores sujeitos à confirmação comercial.</p>
+           <table style="width:100%;border-collapse:collapse;font-size:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Fio</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${fioPDF}</td></tr>
+             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Tecelagem</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${tecelagemPDF}</td></tr>
+             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Tinturaria</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${tinturariaPDF}</td></tr>
+             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Frete</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${fretePDF}</td></tr>
+             ${piquetPDF > 0 ? `<tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Adicional Piquet</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatBRL(piquetPDF)}</td></tr>` : ""}
+             ${comp ? `<tr><td style="padding:9px;"><strong>Composição do fio</strong></td><td style="padding:9px;text-align:right;">${safeText(compTexto)}</td></tr>` : ""}
+           </table>
+
+           <div style="margin-top:26px;background:#fff7ed;border:2px solid #fb923c;border-left:8px solid #ea580c;border-radius:12px;padding:16px 18px;">
+             <div style="font-size:19px;font-weight:900;color:#9a3412;text-transform:uppercase;letter-spacing:.3px;">⚠️ Quebra/Percas: 6% a 8%</div>
+             <p style="margin:6px 0 0;font-size:12px;color:#9a3412;font-weight:600;">Percentual técnico estimado de variação/perda no processo produtivo.</p>
+           </div>
+
+           <p style="margin-top:24px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Valores sujeitos à confirmação comercial.</p>
          `;
 
          try {
