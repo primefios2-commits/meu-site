@@ -10,6 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: "class",
@@ -748,7 +749,10 @@
      downloadPDF: async () => {
          const pNode = fid("sel-produto");
          const cNode = fid("sel-cor");
-         if (!pNode?.value || !cNode?.value) return Toast.show("Selecione Produto e Cor antes de baixar o PDF.", "error");
+
+         if (!pNode?.value || !cNode?.value) {
+             return Toast.show("Selecione Produto e Cor antes de baixar o PDF.", "error");
+         }
          if (!Calc.requireComposicaoIfVisible()) return;
 
          Calc.run();
@@ -756,8 +760,9 @@
          const comp = Calc.getComposicaoSelecionada();
          const compValor = toNum(comp?.valor);
          const compTexto = comp ? `${comp.nome}${compValor > 0 ? ` (+${formatBRL(compValor)}/kg)` : ""}` : "-";
-         const produto = pNode.options[pNode.selectedIndex].text;
-         const cor = cNode.options[cNode.selectedIndex].text;
+
+         const produto = pNode.options[pNode.selectedIndex]?.text || "-";
+         const cor = cNode.options[cNode.selectedIndex]?.text || "-";
          const qtd = fid("sel-quantidade")?.value || "";
          const nome = fid("input-cliente-nome")?.value.trim() || "Cliente";
          const whats = fid("input-cliente-whats")?.value.trim() || "-";
@@ -766,93 +771,229 @@
          const sinal = fid("res-sinal")?.innerText || formatBRL(0);
          const entrega = fid("res-entrega")?.innerText || formatBRL(0);
 
-         // Valores da estrutura do KG puxados diretamente da simulação
          const p = AppState.produtos?.[pNode.value] || {};
          const c = AppState.cores?.[cNode.value] || {};
+
          const fioPDF = formatBRL(toNum(p.fio));
          const tecelagemPDF = formatBRL(toNum(p.tecelagem));
          const tinturariaPDF = formatBRL(toNum(c.tinturaria) + toNum(p.lucro));
          const fretePDF = formatBRL(toNum(p.frete));
          const piquetPDF = toNum(p.piquet);
 
-         const div = document.createElement("div");
+         const txt = (v) => String(v ?? "").replace(/\s+/g, " ").trim() || "-";
 
-		div.style.width = "760px";
-		div.style.padding = "20px 26px";
-		div.style.background = "#ffffff";
-		div.style.color = "#111827";
-		div.style.fontFamily = "Arial, sans-serif";
-		div.style.boxSizing = "border-box";
-		div.style.position = "fixed";
-		div.style.left = "0";
-		div.style.top = "0";
-		div.style.zIndex = "-9999";
-         div.innerHTML = `
-           <div style="border-bottom:2px solid #1e3a8a;padding-bottom:12px;margin-bottom:22px;">
-             <h1 style="margin:0;color:#1e3a8a;font-size:26px;">Prime Fios</h1>
-             <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">Pré-orçamento têxtil - ${new Date().toLocaleDateString("pt-BR")}</p>
-           </div>
-           <h2 style="font-size:18px;color:#1e3a8a;margin-bottom:10px;">Dados do cliente</h2>
-           <p><strong>Nome:</strong> ${safeText(nome)}</p>
-           <p><strong>WhatsApp:</strong> ${safeText(whats)}</p>
-           <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Detalhes da simulação</h2>
-           <table style="width:100%;border-collapse:collapse;font-size:14px;">
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Produto</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(produto)}</td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Cor</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(cor)}</td></tr>
-             ${comp ? `<tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Composição do fio</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(compTexto)}</td></tr>` : ""}
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Quantidade</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${safeText(qtd)} kg</td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Valor/kg</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${valorKg}</td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>${total}</strong></td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Sinal/Fio</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${sinal}</td></tr>
-             <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>Liquidação</strong></td><td style="padding:8px;border-bottom:1px solid #e5e7eb;">${entrega}</td></tr>
-           </table>
-           <h2 style="font-size:18px;color:#1e3a8a;margin:24px 0 10px;">Estrutura do orçamento</h2>
-           <table style="width:100%;border-collapse:collapse;font-size:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
-             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Fio</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${fioPDF}</td></tr>
-             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Tecelagem</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${tecelagemPDF}</td></tr>
-             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Tinturaria</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${tinturariaPDF}</td></tr>
-             <tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Frete</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${fretePDF}</td></tr>
-             ${piquetPDF > 0 ? `<tr><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><strong>Adicional Piquet</strong></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatBRL(piquetPDF)}</td></tr>` : ""}
-             ${comp ? `<tr><td style="padding:9px;"><strong>Composição do fio</strong></td><td style="padding:9px;text-align:right;">${safeText(compTexto)}</td></tr>` : ""}
-           </table>
+         // Preferência: gerar por jsPDF direto, sem captura de tela.
+         // Isso evita PDF em branco, espaço branco no topo e variação de altura causada pelo html2canvas/html2pdf.
+         const JsPDFClass = window.jspdf?.jsPDF || window.jsPDF;
 
-           <div style="margin-top:26px;background:#fff7ed;border:2px solid #fb923c;border-left:8px solid #ea580c;border-radius:12px;padding:16px 18px;">
-             <div style="font-size:19px;font-weight:900;color:#9a3412;text-transform:uppercase;letter-spacing:.3px;">⚠️ Quebra/Percas: 6% a 8%</div>
-             <p style="margin:6px 0 0;font-size:12px;color:#9a3412;font-weight:600;">Percentual técnico estimado de variação/perda no processo produtivo.</p>
-           </div>
+         if (!JsPDFClass) {
+             // Fallback: caso a versão do html2pdf carregada não exponha o jsPDF global.
+             const div = document.createElement("div");
+             div.style.width = "760px";
+             div.style.padding = "22px 28px";
+             div.style.background = "#ffffff";
+             div.style.color = "#111827";
+             div.style.fontFamily = "Arial, sans-serif";
+             div.style.boxSizing = "border-box";
+             div.style.position = "absolute";
+             div.style.left = "0";
+             div.style.top = "0";
+             div.innerHTML = `
+               <div style="border-bottom:2px solid #1e3a8a;padding-bottom:12px;margin-bottom:18px;">
+                 <h1 style="margin:0;color:#1e3a8a;font-size:26px;">Prime Fios</h1>
+                 <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">Pré-orçamento têxtil - ${new Date().toLocaleDateString("pt-BR")}</p>
+               </div>
 
-           <p style="margin-top:24px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Valores sujeitos à confirmação comercial.</p>
-         `;
+               <h2 style="font-size:17px;color:#1e3a8a;margin:0 0 8px;">Dados do cliente</h2>
+               <p style="margin:4px 0;"><strong>Nome:</strong> ${safeText(nome)}</p>
+               <p style="margin:4px 0 14px;"><strong>WhatsApp:</strong> ${safeText(whats)}</p>
 
-document.body.appendChild(div);
+               <h2 style="font-size:17px;color:#1e3a8a;margin:16px 0 8px;">Detalhes da simulação</h2>
+               <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;width:32%;"><strong>Produto</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${safeText(produto)}</td></tr>
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Cor</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${safeText(cor)}</td></tr>
+                 ${comp ? `<tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Composição do fio</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${safeText(compTexto)}</td></tr>` : ""}
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Quantidade</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${safeText(qtd)} kg</td></tr>
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Valor/kg</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${valorKg}</td></tr>
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Total</strong></td><td style="padding:7px;border:1px solid #e5e7eb;"><strong>${total}</strong></td></tr>
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Sinal/Fio</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${sinal}</td></tr>
+                 <tr><td style="padding:7px;border:1px solid #e5e7eb;"><strong>Liquidação</strong></td><td style="padding:7px;border:1px solid #e5e7eb;">${entrega}</td></tr>
+               </table>
 
-try {
-  Toast.show("Gerando PDF...", "success");
+               <h2 style="font-size:17px;color:#1e3a8a;margin:18px 0 8px;">Estrutura do orçamento</h2>
+               <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f8fafc;">
+                 <tr><td style="padding:8px;border:1px solid #e5e7eb;"><strong>Fio</strong></td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${fioPDF}</td></tr>
+                 <tr><td style="padding:8px;border:1px solid #e5e7eb;"><strong>Tecelagem</strong></td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${tecelagemPDF}</td></tr>
+                 <tr><td style="padding:8px;border:1px solid #e5e7eb;"><strong>Tinturaria</strong></td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${tinturariaPDF}</td></tr>
+                 <tr><td style="padding:8px;border:1px solid #e5e7eb;"><strong>Frete</strong></td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${fretePDF}</td></tr>
+                 ${piquetPDF > 0 ? `<tr><td style="padding:8px;border:1px solid #e5e7eb;"><strong>Adicional Piquet</strong></td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${formatBRL(piquetPDF)}</td></tr>` : ""}
+                 ${comp ? `<tr><td style="padding:8px;border:1px solid #e5e7eb;"><strong>Composição do fio</strong></td><td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${safeText(compTexto)}</td></tr>` : ""}
+               </table>
 
-  await html2pdf().set({
-    margin: [6, 8, 6, 8],
-    filename: `Orcamento_Prime_Fios_${Date.now()}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: {
-      scale: 2,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: 760
-    },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait"
-    }
-  }).from(div).save();
+               <div style="margin-top:22px;background:#fff7ed;border:2px solid #fb923c;border-left:8px solid #ea580c;border-radius:12px;padding:14px 16px;">
+                 <div style="font-size:18px;font-weight:900;color:#9a3412;text-transform:uppercase;">Quebra/Percas: 6% a 8%</div>
+                 <p style="margin:5px 0 0;font-size:12px;color:#9a3412;font-weight:600;">Percentual técnico estimado de variação/perda no processo produtivo.</p>
+               </div>
 
-  div.remove();
-  Toast.show("PDF gerado com sucesso!", "success");
-} catch (e) {
-  div.remove();
-  console.error(e);
-  Toast.show("Erro ao gerar PDF.", "error");
-}
+               <p style="margin-top:18px;font-size:11px;color:#6b7280;">Prazo médio: 25 a 45 dias. Valores sujeitos à confirmação comercial.</p>
+             `;
+
+             document.body.appendChild(div);
+
+             try {
+                 Toast.show("Gerando PDF...", "success");
+                 await html2pdf().set({
+                     margin: [6, 8, 6, 8],
+                     filename: `Orcamento_Prime_Fios_${Date.now()}.pdf`,
+                     image: { type: "jpeg", quality: 0.98 },
+                     html2canvas: { scale: 2, scrollX: 0, scrollY: 0, backgroundColor: "#ffffff" },
+                     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+                 }).from(div).save();
+                 Toast.show("PDF gerado com sucesso!", "success");
+             } catch (e) {
+                 console.error(e);
+                 Toast.show("Erro ao gerar PDF.", "error");
+             } finally {
+                 div.remove();
+             }
+             return;
+         }
+
+         try {
+             Toast.show("Gerando PDF...", "success");
+
+             const pdf = new JsPDFClass({ unit: "mm", format: "a4", orientation: "portrait" });
+             const pageW = pdf.internal.pageSize.getWidth();
+             const pageH = pdf.internal.pageSize.getHeight();
+             const margin = 14;
+             const contentW = pageW - margin * 2;
+             let y = 16;
+
+             const ensurePage = (needed = 18) => {
+                 if (y + needed > pageH - 14) {
+                     pdf.addPage();
+                     y = 16;
+                 }
+             };
+
+             const addHeader = () => {
+                 pdf.setDrawColor(30, 58, 138);
+                 pdf.setLineWidth(0.8);
+                 pdf.line(margin, y + 11, pageW - margin, y + 11);
+
+                 pdf.setFont("helvetica", "bold");
+                 pdf.setTextColor(30, 58, 138);
+                 pdf.setFontSize(22);
+                 pdf.text("Prime Fios", margin, y + 2);
+
+                 pdf.setFont("helvetica", "normal");
+                 pdf.setTextColor(107, 114, 128);
+                 pdf.setFontSize(9);
+                 pdf.text(`Pre-orcamento textil - ${new Date().toLocaleDateString("pt-BR")}`, margin, y + 8);
+
+                 y += 20;
+             };
+
+             const addSectionTitle = (title) => {
+                 ensurePage(14);
+                 y += 2;
+                 pdf.setFont("helvetica", "bold");
+                 pdf.setTextColor(30, 58, 138);
+                 pdf.setFontSize(14);
+                 pdf.text(title, margin, y);
+                 y += 5;
+             };
+
+             const addRow = (label, value, options = {}) => {
+                 const labelW = 50;
+                 const valueW = contentW - labelW;
+                 const lines = pdf.splitTextToSize(txt(value), valueW - 6);
+                 const rowH = Math.max(8, lines.length * 4.6 + 4);
+                 ensurePage(rowH + 2);
+
+                 pdf.setDrawColor(229, 231, 235);
+                 pdf.setLineWidth(0.2);
+                 if (options.fill) {
+                     pdf.setFillColor(248, 250, 252);
+                 } else {
+                     pdf.setFillColor(255, 255, 255);
+                 }
+                 pdf.rect(margin, y, contentW, rowH, "FD");
+                 pdf.line(margin + labelW, y, margin + labelW, y + rowH);
+
+                 pdf.setFont("helvetica", "bold");
+                 pdf.setFontSize(10);
+                 pdf.setTextColor(17, 24, 39);
+                 pdf.text(txt(label), margin + 3, y + 5.5);
+
+                 pdf.setFont("helvetica", options.boldValue ? "bold" : "normal");
+                 pdf.text(lines, margin + labelW + 3, y + 5.5);
+
+                 y += rowH;
+             };
+
+             const addAlert = () => {
+                 ensurePage(26);
+                 y += 6;
+
+                 pdf.setFillColor(255, 247, 237);
+                 pdf.setDrawColor(234, 88, 12);
+                 pdf.setLineWidth(0.6);
+                 pdf.roundedRect(margin, y, contentW, 22, 3, 3, "FD");
+
+                 pdf.setFillColor(234, 88, 12);
+                 pdf.rect(margin, y, 3, 22, "F");
+
+                 pdf.setFont("helvetica", "bold");
+                 pdf.setFontSize(14);
+                 pdf.setTextColor(154, 52, 18);
+                 pdf.text("Quebra/Percas: 6% a 8%", margin + 7, y + 8);
+
+                 pdf.setFont("helvetica", "normal");
+                 pdf.setFontSize(9);
+                 pdf.text("Percentual tecnico estimado de variacao/perda no processo produtivo.", margin + 7, y + 15);
+
+                 y += 26;
+             };
+
+             addHeader();
+
+             addSectionTitle("Dados do cliente");
+             addRow("Nome", nome);
+             addRow("WhatsApp", whats);
+
+             addSectionTitle("Detalhes da simulacao");
+             addRow("Produto", produto);
+             addRow("Cor", cor);
+             if (comp) addRow("Composicao do fio", compTexto);
+             addRow("Quantidade", `${qtd} kg`);
+             addRow("Valor/kg", valorKg);
+             addRow("Total", total, { boldValue: true });
+             addRow("Sinal/Fio", sinal);
+             addRow("Liquidacao", entrega);
+
+             addSectionTitle("Estrutura do orcamento");
+             addRow("Fio", fioPDF, { fill: true });
+             addRow("Tecelagem", tecelagemPDF, { fill: true });
+             addRow("Tinturaria", tinturariaPDF, { fill: true });
+             addRow("Frete", fretePDF, { fill: true });
+             if (piquetPDF > 0) addRow("Adicional Piquet", formatBRL(piquetPDF), { fill: true });
+             if (comp) addRow("Composicao do fio", compTexto, { fill: true });
+
+             addAlert();
+
+             ensurePage(10);
+             pdf.setFont("helvetica", "normal");
+             pdf.setFontSize(8);
+             pdf.setTextColor(107, 114, 128);
+             pdf.text("Prazo medio: 25 a 45 dias. Valores sujeitos a confirmacao comercial.", margin, y + 2);
+
+             pdf.save(`Orcamento_Prime_Fios_${Date.now()}.pdf`);
+             Toast.show("PDF gerado com sucesso!", "success");
+         } catch (e) {
+             console.error(e);
+             Toast.show("Erro ao gerar PDF.", "error");
+         }
      }
   };
 
