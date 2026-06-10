@@ -877,86 +877,100 @@
              };
 
              const addHeader = () => {
-                 pdf.setDrawColor(30, 58, 138);
-                 pdf.setLineWidth(0.8);
-                 pdf.line(margin, y + 11, pageW - margin, y + 11);
+    pdf.setDrawColor(30, 58, 138);
+    pdf.setLineWidth(0.8);
 
-                 pdf.setFont("helvetica", "bold");
-                 pdf.setTextColor(30, 58, 138);
-                 pdf.setFontSize(22);
-                 pdf.text("Prime Fios", margin, y + 2);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 58, 138);
+    pdf.setFontSize(22);
+    pdf.text("Prime Fios", margin, y + 2);
 
-                 pdf.setFont("helvetica", "normal");
-                 pdf.setTextColor(107, 114, 128);
-                 pdf.setFontSize(9);
-                 pdf.text(`Pre-orcamento textil - ${new Date().toLocaleDateString("pt-BR")}`, margin, y + 8);
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(107, 114, 128);
+    pdf.setFontSize(9);
+    pdf.text(`Pre-orcamento textil - ${new Date().toLocaleDateString("pt-BR")}`, margin, y + 9);
 
-                 y += 20;
-             };
+    pdf.line(margin, y + 14, pageW - margin, y + 14);
 
-             const addSectionTitle = (title) => {
-                 ensurePage(14);
-                 y += 2;
-                 pdf.setFont("helvetica", "bold");
-                 pdf.setTextColor(30, 58, 138);
-                 pdf.setFontSize(14);
-                 pdf.text(title, margin, y);
-                 y += 5;
-             };
+    y += 26;
+};
 
-             const addRow = (label, value, options = {}) => {
-                 const labelW = 50;
-                 const valueW = contentW - labelW;
-                 const lines = pdf.splitTextToSize(txt(value), valueW - 6);
-                 const rowH = Math.max(8, lines.length * 4.6 + 4);
-                 ensurePage(rowH + 2);
+const addSectionTitle = (title) => {
+    ensurePage(18);
 
-                 pdf.setDrawColor(229, 231, 235);
-                 pdf.setLineWidth(0.2);
-                 if (options.fill) {
-                     pdf.setFillColor(248, 250, 252);
-                 } else {
-                     pdf.setFillColor(255, 255, 255);
-                 }
-                 pdf.rect(margin, y, contentW, rowH, "FD");
-                 pdf.line(margin + labelW, y, margin + labelW, y + rowH);
+    // espaço antes do título
+    y += 7;
 
-                 pdf.setFont("helvetica", "bold");
-                 pdf.setFontSize(10);
-                 pdf.setTextColor(17, 24, 39);
-                 pdf.text(txt(label), margin + 3, y + 5.5);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(30, 58, 138);
+    pdf.setFontSize(14);
+    pdf.text(title, margin, y);
 
-                 pdf.setFont("helvetica", options.boldValue ? "bold" : "normal");
-                 pdf.text(lines, margin + labelW + 3, y + 5.5);
+    // espaço depois do título
+    y += 8;
+};
 
-                 y += rowH;
-             };
+const addRow = (label, value, options = {}) => {
+    const labelW = 50;
+    const valueW = contentW - labelW;
 
-             const addAlert = () => {
-                 ensurePage(26);
-                 y += 6;
+    const lines = pdf.splitTextToSize(txt(value), valueW - 6);
 
-                 pdf.setFillColor(255, 247, 237);
-                 pdf.setDrawColor(234, 88, 12);
-                 pdf.setLineWidth(0.6);
-                 pdf.roundedRect(margin, y, contentW, 22, 3, 3, "FD");
+    // altura maior para evitar texto encostado
+    const rowH = Math.max(10, lines.length * 5 + 5);
 
-                 pdf.setFillColor(234, 88, 12);
-                 pdf.rect(margin, y, 3, 22, "F");
+    ensurePage(rowH + 4);
 
-                 pdf.setFont("helvetica", "bold");
-                 pdf.setFontSize(14);
-                 pdf.setTextColor(154, 52, 18);
-                 pdf.text("Quebra/Percas: 6% a 8%", margin + 7, y + 8);
+    pdf.setDrawColor(229, 231, 235);
+    pdf.setLineWidth(0.2);
 
-                 pdf.setFont("helvetica", "normal");
-                 pdf.setFontSize(9);
-                 pdf.text("Percentual tecnico estimado de variacao/perda no processo produtivo.", margin + 7, y + 15);
+    if (options.fill) {
+        pdf.setFillColor(248, 250, 252);
+    } else {
+        pdf.setFillColor(255, 255, 255);
+    }
 
-                 y += 26;
-             };
+    pdf.rect(margin, y, contentW, rowH, "FD");
+    pdf.line(margin + labelW, y, margin + labelW, y + rowH);
 
-             addHeader();
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(17, 24, 39);
+    pdf.text(txt(label), margin + 3, y + 6.5);
+
+    pdf.setFont("helvetica", options.boldValue ? "bold" : "normal");
+    pdf.setFontSize(9.5);
+    pdf.text(lines, margin + labelW + 3, y + 6.5);
+
+    y += rowH;
+};
+
+const addAlert = () => {
+    ensurePage(34);
+
+    // espaço antes do alerta
+    y += 8;
+
+    pdf.setFillColor(255, 247, 237);
+    pdf.setDrawColor(234, 88, 12);
+    pdf.setLineWidth(0.6);
+    pdf.roundedRect(margin, y, contentW, 24, 3, 3, "FD");
+
+    pdf.setFillColor(234, 88, 12);
+    pdf.rect(margin, y, 3, 24, "F");
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14);
+    pdf.setTextColor(154, 52, 18);
+    pdf.text("Quebra/Percas: 6% a 8%", margin + 7, y + 9);
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.text("Percentual tecnico estimado de variacao/perda no processo produtivo.", margin + 7, y + 16);
+
+    y += 32;
+};
+			  addHeader();
 
              addSectionTitle("Dados do cliente");
              addRow("Nome", nome);
